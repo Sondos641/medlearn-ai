@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import logo from '../assets/Logo 2 without background.png';
 
 const FacultyDashboard = () => {
   const { user, logout } = useAuth();
@@ -47,14 +48,24 @@ const FacultyDashboard = () => {
 
   return (
     <div className="dashboard">
-      {/* Sidebar */}
       <div className="sidebar">
         <div style={{ marginBottom: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '40px', height: '40px', backgroundColor: 'var(--primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ color: 'white', fontWeight: 'bold' }}>AI</span>
+            <div style={{ 
+              width: '60px', 
+              height: '60px', 
+              borderRadius: '12px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center' 
+            }}>
+              <img 
+                src={logo} 
+                alt="MedLearn AI Logo" 
+                style={{ width: '80px', height: '80px', objectFit: 'contain' }}
+              />
             </div>
-            <span style={{ fontWeight: 600, color: 'var(--text)' }}>MedLearn AI</span>
+            <span style={{ fontWeight: 600, fontSize: '18px', color: 'var(--text)' }}>MedLearn AI</span>
           </div>
         </div>
 
@@ -68,7 +79,7 @@ const FacultyDashboard = () => {
 
         <div style={{ position: 'absolute', bottom: '24px', left: '24px', right: '24px' }}>
           <div className="flex-between" style={{ marginBottom: '16px' }}>
-            <span className="text-body">Dark Mode</span>
+            <span className="text-body">{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
             <button 
               onClick={toggleDarkMode} 
               style={{ padding: '8px', borderRadius: '8px', background: 'var(--background)', border: 'none', cursor: 'pointer' }}
@@ -76,19 +87,21 @@ const FacultyDashboard = () => {
               {isDarkMode ? '☀️' : '🌙'}
             </button>
           </div>
-          <button onClick={handleLogout} className="sidebar-item" style={{ color: 'var(--error)' }}>Logout</button>
+          <div className="flex-between">
+            <span className="text-body" style={{ color: 'var(--error)' }}>Logout</span>
+            <button onClick={handleLogout} style={{ padding: '8px', borderRadius: '8px', background: 'var(--error)', border: 'none', cursor: 'pointer', color: 'white' }}>
+              🚪
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="main-content">
-        {/* Greeting */}
         <div style={{ marginBottom: '32px' }}>
           <h1 className="h1">Welcome back, Professor {user?.name || 'Faculty'}! 📊</h1>
           <p className="text-large" style={{ marginTop: '4px' }}>Monitor student progress and performance across all modules</p>
         </div>
 
-        {/* Summary Stats */}
         <div className="grid-4" style={{ marginBottom: '32px' }}>
           {summaryStats.map((stat, index) => (
             <div key={index} className="stat-card">
@@ -102,7 +115,6 @@ const FacultyDashboard = () => {
           ))}
         </div>
 
-        {/* Students Table */}
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ padding: '24px', borderBottom: '1px solid var(--border)' }}>
             <h2 className="h2">Student Performance Overview</h2>
@@ -173,7 +185,6 @@ const FacultyDashboard = () => {
           </div>
         </div>
 
-        {/* Performance Chart Section */}
         <div style={{ marginTop: '32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
           <div className="card">
             <h3 className="h2" style={{ marginBottom: '16px' }}>Module Performance</h3>
@@ -226,7 +237,6 @@ const FacultyDashboard = () => {
         </div>
       </div>
 
-      {/* Modal for Student Report */}
       {selectedStudent && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setSelectedStudent(null)}>
           <div style={{ backgroundColor: 'var(--cards)', borderRadius: '16px', maxWidth: '600px', width: '90%', maxHeight: '80vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
