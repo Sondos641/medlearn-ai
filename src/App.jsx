@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/auth/Login';
 import StudentDashboard from './pages/StudentDashboard';
+import StudentLearning from './pages/StudentLearning';
 import FacultyDashboard from './pages/FacultyDashboard';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -31,6 +32,15 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['student']}>
             <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/student/learning"
+        element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <StudentLearning />
           </ProtectedRoute>
         }
       />

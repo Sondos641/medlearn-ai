@@ -35,7 +35,14 @@ const StudentDashboard = () => {
   ];
 
   const modules = [
-    { id: 'learning', name: 'Learning Module', description: 'AI-guided conceptual learning using controlled content', icon: '🧠', status: 'available' },
+    { 
+      id: 'learning', 
+      name: 'Learning Module', 
+      description: 'AI-guided conceptual learning using controlled content', 
+      icon: '🧠', 
+      status: 'available',
+      path: '/student/learning'
+    },
     { id: 'practice', name: 'Practice Module', description: 'Interactive virtual patient interviews with feedback', icon: '💬', status: 'available' },
     { id: 'evaluation', name: 'Evaluation Module', description: 'Exam-like assessment sessions with performance reports', icon: '📝', status: 'locked' }
   ];
@@ -43,6 +50,16 @@ const StudentDashboard = () => {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleModuleClick = (module) => {
+    if (module.status === 'locked') {
+      alert('Complete practice sessions first');
+      return;
+    }
+    if (module.path) {
+      navigate(module.path);
+    }
   };
 
   return (
@@ -70,7 +87,7 @@ const StudentDashboard = () => {
 
         <nav className="sidebar-nav">
           <button className="sidebar-item active">Dashboard</button>
-          <button className="sidebar-item">Learning</button>
+          <button className="sidebar-item" onClick={() => navigate('/student/learning')}>Learning</button>
           <button className="sidebar-item">Practice</button>
           <button className="sidebar-item">Evaluation</button>
           <button className="sidebar-item">Progress</button>
@@ -115,7 +132,11 @@ const StudentDashboard = () => {
           <h2 className="h2" style={{ marginBottom: '16px' }}>Available Modules</h2>
           <div className="grid-3">
             {modules.map((module) => (
-              <div key={module.id} className="module-card" style={{ opacity: module.status === 'locked' ? 0.7 : 1 }}>
+              <div key={module.id} 
+                className="module-card" 
+                style={{ opacity: module.status === 'locked' ? 0.7 : 1 }}
+                onClick={() => handleModuleClick(module)}
+              >
                 <div className="module-icon">{module.icon}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <h3 className="module-title">{module.name}</h3>
