@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Python
+backend/venv/
+backend/__pycache__/
+*.pyc
+
+# RAG generated database
+backend/data/chroma_db/
+
+# Extracted/generated textbook files
+backend/data/textbook/medical_book_text.txt
+backend/data/textbook/medical_book_chunks.txt
