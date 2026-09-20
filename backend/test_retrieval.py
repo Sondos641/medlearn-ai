@@ -1,6 +1,6 @@
 import chromadb
 
-client = chromadb.PersistentClient(path="data/chroma_db")
+client = chromadb.PersistentClient(path="backend/data/chroma_db")
 
 collection = client.get_collection(
     name="medical_textbook"

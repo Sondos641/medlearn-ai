@@ -1,9 +1,9 @@
 import chromadb
 import re
 
-input_path = "data/textbook/medical_book_chunks.txt"
+input_path = "backend/data/textbook/medical_book_chunks.txt"
 
-client = chromadb.PersistentClient(path="data/chroma_db")
+client = chromadb.PersistentClient(path="backend/data/chroma_db")
 
 collection = client.get_or_create_collection(
     name="medical_textbook"

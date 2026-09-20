@@ -1,7 +1,7 @@
 import re
 
-input_path = "data/textbook/medical_book_text.txt"
-output_path = "data/textbook/medical_book_chunks.txt"
+input_path = "backend/data/textbook/medical_book_text.txt"
+output_path = "backend/data/textbook/medical_book_chunks.txt"
 
 with open(input_path, "r", encoding="utf-8") as file:
     text = file.read()

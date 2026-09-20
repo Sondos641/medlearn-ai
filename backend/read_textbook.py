@@ -1,7 +1,7 @@
 import fitz
 
-pdf_path = "data/textbook/Medical book.pdf"
-output_path = "data/textbook/medical_book_text.txt"
+pdf_path = "backend/data/textbook/Medical book.pdf"
+output_path = "backend/data/textbook/medical_book_text.txt"
 
 doc = fitz.open(pdf_path)
 
