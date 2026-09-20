@@ -33,3 +33,8 @@ backend/data/chroma_db/
 # Extracted/generated textbook files
 backend/data/textbook/medical_book_text.txt
 backend/data/textbook/medical_book_chunks.txt
+
+# Environment variables / API keys
+.env
+*.env
+backend/.env
