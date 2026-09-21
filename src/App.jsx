@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/auth/Login';
 import StudentDashboard from './pages/StudentDashboard';
-import StudentLearning from './pages/StudentLearning';
+import StudentLearning from './pages/Studentlearning';
 import FacultyDashboard from './pages/FacultyDashboard';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {

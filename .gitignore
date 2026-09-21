@@ -38,3 +38,7 @@ backend/data/textbook/medical_book_chunks.txt
 .env
 *.env
 backend/.env
+# Environment variables / API keys
+.env
+*.env
+backend/.env
