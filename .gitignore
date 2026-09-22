@@ -7,6 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies and build files
 node_modules
 dist
 dist-ssr
@@ -22,6 +23,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
 # Python
 backend/venv/
 backend/__pycache__/
@@ -34,10 +36,6 @@ backend/data/chroma_db/
 backend/data/textbook/medical_book_text.txt
 backend/data/textbook/medical_book_chunks.txt
 
-# Environment variables / API keys
-.env
-*.env
-backend/.env
 # Environment variables / API keys
 .env
 *.env
