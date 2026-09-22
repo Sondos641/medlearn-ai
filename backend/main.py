@@ -102,15 +102,17 @@ Textbook information:
     answer = response.choices[0].message.content
 
     # Return answer and sources to the frontend
+       # Return sources only if the answer was found in the textbook
     sources = []
 
-    for i in range(len(results["documents"][0])):
-        page = results["metadatas"][0][i]["page"]
+    if "I couldn't find this information in the provided textbook." not in answer:
+        for i in range(len(results["documents"][0])):
+            page = results["metadatas"][0][i]["page"]
 
-        sources.append({
-            "page": page,
-            "source": "Medical book.pdf"
-        })
+            sources.append({
+                "page": page,
+                "source": "Medical book.pdf"
+            })
 
     return {
         "question": question,
