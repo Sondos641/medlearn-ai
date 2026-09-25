@@ -1,9 +1,25 @@
 import chromadb
 import re
+from pathlib import Path
 
-input_path = "backend/data/textbook/medical_book_chunks.txt"
+BACKEND_DIR = Path(__file__).resolve().parent
 
-client = chromadb.PersistentClient(path="backend/data/chroma_db")
+input_path = (
+    BACKEND_DIR
+    / "data"
+    / "textbook"
+    / "medical_book_chunks.txt"
+)
+
+chroma_path = (
+    BACKEND_DIR
+    / "data"
+    / "chroma_db"
+)
+
+client = chromadb.PersistentClient(
+    path=str(chroma_path)
+)
 
 collection = client.get_or_create_collection(
     name="medical_textbook"
@@ -19,12 +35,15 @@ documents = []
 metadatas = []
 
 for i in range(1, len(parts), 2):
+
     page_number = parts[i]
     page_text = parts[i + 1].strip()
 
     if page_text:
+
         ids.append(f"page_{page_number}")
         documents.append(page_text)
+
         metadatas.append({
             "source": "Medical book.pdf",
             "page": int(page_number)

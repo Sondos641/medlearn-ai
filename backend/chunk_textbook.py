@@ -1,7 +1,21 @@
 import re
+from pathlib import Path
 
-input_path = "backend/data/textbook/medical_book_text.txt"
-output_path = "backend/data/textbook/medical_book_chunks.txt"
+BACKEND_DIR = Path(__file__).resolve().parent
+
+input_path = (
+    BACKEND_DIR
+    / "data"
+    / "textbook"
+    / "medical_book_text.txt"
+)
+
+output_path = (
+    BACKEND_DIR
+    / "data"
+    / "textbook"
+    / "medical_book_chunks.txt"
+)
 
 with open(input_path, "r", encoding="utf-8") as file:
     text = file.read()
@@ -16,7 +30,8 @@ for i in range(1, len(pages), 2):
 
     if page_text:
         chunks.append(
-            f"--- PAGE {page_number} ---\n{page_text}\n"
+            f"--- PAGE {page_number} ---\n"
+            f"{page_text}\n"
         )
 
 with open(output_path, "w", encoding="utf-8") as file:
