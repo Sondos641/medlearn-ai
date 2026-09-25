@@ -77,13 +77,13 @@ const StudentLearning = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/ask', {
+      const response = await fetch('http://127.0.0.1:5000/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          question: message,
+          message: message,
         }),
       });
 
@@ -97,8 +97,8 @@ const StudentLearning = () => {
         id: Date.now() + 1,
         type: 'ai',
         content:
-          data.answer ||
-          "I couldn't find an answer in the provided textbook.",
+          data.reply ||
+          "I couldn't find an answer.",
         sources: data.sources || [],
         timestamp: new Date().toLocaleTimeString(),
       };
