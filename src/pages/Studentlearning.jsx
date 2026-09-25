@@ -14,6 +14,7 @@ const StudentLearning = () => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [translatingMessageId, setTranslatingMessageId] = useState(null);
 
   const [suggestedQuestions, setSuggestedQuestions] = useState([
     'What is the purpose of a health history interview?',
@@ -119,6 +120,52 @@ const StudentLearning = () => {
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleTranslateMessage = async (messageId) => {
+    const message = messages.find((item) => item.id === messageId);
+    if (!message || message.type !== 'ai') return;
+
+    if (message.arabicContent) {
+      setMessages((prev) =>
+        prev.map((item) =>
+          item.id === messageId
+            ? { ...item, showArabic: !item.showArabic }
+            : item
+        )
+      );
+      return;
+    }
+
+    setTranslatingMessageId(messageId);
+
+    try {
+      const response = await fetch('http://127.0.0.1:5000/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: message.content }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (!data.translation) throw new Error('No translation returned');
+
+      setMessages((prev) =>
+        prev.map((item) =>
+          item.id === messageId
+            ? { ...item, arabicContent: data.translation, showArabic: true }
+            : item
+        )
+      );
+    } catch (error) {
+      console.error('Error translating response:', error);
+      alert('Sorry, the Arabic translation could not be loaded. Please try again.');
+    } finally {
+      setTranslatingMessageId(null);
     }
   };
 
@@ -490,9 +537,11 @@ const StudentLearning = () => {
 </div>
                     ) : (
                       <div
+                        dir={message.showArabic ? 'rtl' : 'ltr'}
                         style={{
                           fontSize: '14px',
                           lineHeight: '1.6',
+                          textAlign: message.showArabic ? 'right' : 'left',
                         }}
                       >
                         <ReactMarkdown
@@ -672,8 +721,32 @@ const StudentLearning = () => {
                             ),
                           }}
                         >
-                          {message.content}
+                          {message.showArabic && message.arabicContent
+                            ? message.arabicContent
+                            : message.content}
                         </ReactMarkdown>
+
+                        <button
+                          onClick={() => handleTranslateMessage(message.id)}
+                          disabled={translatingMessageId === message.id}
+                          style={{
+                            marginTop: '8px',
+                            padding: '7px 10px',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border)',
+                            backgroundColor: 'var(--background)',
+                            color: 'var(--text)',
+                            cursor: translatingMessageId === message.id ? 'not-allowed' : 'pointer',
+                            fontSize: '12px',
+                            opacity: translatingMessageId === message.id ? 0.6 : 1,
+                          }}
+                        >
+                          {translatingMessageId === message.id
+                            ? 'Translating...'
+                            : message.showArabic
+                            ? '🌐 Show Original (English)'
+                            : '🌐 Translate to Arabic'}
+                        </button>
 
                         {/* Sources */}
                         {message.sources &&

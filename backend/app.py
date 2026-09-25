@@ -4,19 +4,15 @@ from dotenv import load_dotenv
 from groq import Groq
 import os
 
-# Load environment variables from .env
 load_dotenv()
 
-# Get Groq API key from .env
 API_KEY = os.getenv("GROQ_API_KEY")
 
 if not API_KEY:
     raise ValueError("GROQ_API_KEY was not found in .env")
 
-# Create Groq client
 client = Groq(api_key=API_KEY)
 
-# Create Flask app
 app = Flask(__name__)
 CORS(app)
 
@@ -29,7 +25,6 @@ def home():
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
-        # Get JSON sent from frontend
         data = request.get_json()
 
         if not data:
@@ -40,12 +35,10 @@ def chat():
         if not user_message:
             return jsonify({"error": "No message provided"}), 400
 
-        # Instructions for the AI
         system_prompt = """
 You are a nursing educator for the Physical Assessment & Health History course.
 
 Your job is to help nursing students understand course concepts clearly.
-
 Explain answers in a simple, educational, and student-friendly way.
 
 If a question is outside nursing, physical assessment, health history,
@@ -54,40 +47,70 @@ or the provided course material, say that it is outside the course content.
 Do not invent medical facts.
 """
 
-        # Send request to Groq
         response = client.chat.completions.create(
             model="openai/gpt-oss-20b",
             messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": user_message
-                }
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
             ],
-            temperature=0.3
+            temperature=0.3,
         )
 
-        # Get AI response
-        ai_reply = response.choices[0].message.content
+        return jsonify({"reply": response.choices[0].message.content})
+
+    except Exception as e:
+        print("CHAT ERROR:", str(e))
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/translate", methods=["POST"])
+def translate():
+    try:
+        data = request.get_json()
+
+        if not data:
+            return jsonify({"error": "No data received"}), 400
+
+        text = data.get("text", "").strip()
+
+        if not text:
+            return jsonify({"error": "No text provided"}), 400
+
+        translation_prompt = """
+Translate the provided educational nursing content from English into clear,
+natural Arabic for university nursing students.
+
+Rules:
+- Preserve the original meaning and medical accuracy.
+- Do not add or remove medical information.
+- Keep important medical and nursing terminology in English in parentheses
+  after the Arabic term when useful for learning.
+- Preserve headings, bullet points, numbered lists, and Markdown formatting.
+- Do not translate citations, page numbers, URLs, or source identifiers.
+- Return only the Arabic translation, with no introduction or commentary.
+"""
+
+        response = client.chat.completions.create(
+            model="openai/gpt-oss-20b",
+            messages=[
+                {"role": "system", "content": translation_prompt},
+                {"role": "user", "content": text},
+            ],
+            temperature=0.1,
+        )
 
         return jsonify({
-            "reply": ai_reply
+            "translation": response.choices[0].message.content
         })
 
     except Exception as e:
-        print("ERROR:", str(e))
-
-        return jsonify({
-            "error": str(e)
-        }), 500
+        print("TRANSLATION ERROR:", str(e))
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
     app.run(
         host="127.0.0.1",
         port=5000,
-        debug=True
+        debug=True,
     )
