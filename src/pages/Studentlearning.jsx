@@ -125,6 +125,7 @@ const StudentLearning = () => {
 
   const handleTranslateMessage = async (messageId) => {
     const message = messages.find((item) => item.id === messageId);
+
     if (!message || message.type !== 'ai') return;
 
     if (message.arabicContent) {
@@ -143,8 +144,12 @@ const StudentLearning = () => {
     try {
       const response = await fetch('http://127.0.0.1:5000/translate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: message.content }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: message.content,
+        }),
       });
 
       if (!response.ok) {
@@ -152,18 +157,29 @@ const StudentLearning = () => {
       }
 
       const data = await response.json();
-      if (!data.translation) throw new Error('No translation returned');
+
+console.log('TRANSLATE RESPONSE:', data);
+
+if (!data.translation) {
+  throw new Error('No translation returned');
+}
 
       setMessages((prev) =>
         prev.map((item) =>
           item.id === messageId
-            ? { ...item, arabicContent: data.translation, showArabic: true }
+            ? {
+                ...item,
+                arabicContent: data.translation,
+                showArabic: true,
+              }
             : item
         )
       );
     } catch (error) {
       console.error('Error translating response:', error);
-      alert('Sorry, the Arabic translation could not be loaded. Please try again.');
+      alert(
+        'Sorry, the Arabic translation could not be loaded. Please try again.'
+      );
     } finally {
       setTranslatingMessageId(null);
     }
