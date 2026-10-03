@@ -1,0 +1,285 @@
+{
+  "system": "cardiovascular",
+  "total_marks": 100,
+  "scoring": {
+    "0": "Not done",
+    "1": "Partial",
+    "2": "Correct"
+  },
+  "sections": [
+    {
+      "name": "Interview and History",
+      "max_marks": 30,
+      "criteria": [
+        {
+          "id": 1,
+          "criterion": "Initiates interview correctly: introduction, name, role, purpose",
+          "max_score": 2
+        },
+        {
+          "id": 2,
+          "criterion": "Addresses confidentiality and sets time frame",
+          "max_score": 2
+        },
+        {
+          "id": 3,
+          "criterion": "Uses open-ended opening question",
+          "max_score": 2
+        },
+        {
+          "id": 4,
+          "criterion": "PQRST — Provocation and Palliation",
+          "max_score": 2
+        },
+        {
+          "id": 5,
+          "criterion": "PQRST — Quality and Region (radiation)",
+          "max_score": 2
+        },
+        {
+          "id": 6,
+          "criterion": "PQRST — Severity (0-10 scale) and Timing",
+          "max_score": 2
+        },
+        {
+          "id": 7,
+          "criterion": "ROS: dyspnoea, PND, orthopnoea, palpitations, oedema",
+          "max_score": 2
+        },
+        {
+          "id": 8,
+          "criterion": "Past Medical History: HTN, DM, medications, adherence",
+          "max_score": 2
+        },
+        {
+          "id": 9,
+          "criterion": "Family History: premature cardiac disease",
+          "max_score": 2
+        },
+        {
+          "id": 10,
+          "criterion": "Allergy history including reaction type",
+          "max_score": 2
+        },
+        {
+          "id": 11,
+          "criterion": "Lifestyle: smoking pack-years, alcohol",
+          "max_score": 2
+        },
+        {
+          "id": 12,
+          "criterion": "ADL impact explored",
+          "max_score": 2
+        },
+        {
+          "id": 13,
+          "criterion": "Accurate comprehensive closing summary confirmed",
+          "max_score": 2
+        },
+        {
+          "id": 14,
+          "criterion": "Identifies correct system with rationale",
+          "max_score": 2
+        },
+        {
+          "id": 15,
+          "criterion": "Empathetic communication throughout",
+          "max_score": 2
+        }
+      ]
+    },
+    {
+      "name": "Physical Assessment",
+      "max_marks": 40,
+      "criteria": [
+        {
+          "id": 16,
+          "criterion": "Prepares correctly: hand hygiene, explains, positions at 45 degrees",
+          "max_score": 2
+        },
+        {
+          "id": 17,
+          "criterion": "Inspects precordium: apex visibility, scars, contour",
+          "max_score": 2
+        },
+        {
+          "id": 18,
+          "criterion": "Palpates apex beat using correct landmark technique",
+          "max_score": 2
+        },
+        {
+          "id": 19,
+          "criterion": "Identifies displaced apex beat and LV heave correctly",
+          "max_score": 2
+        },
+        {
+          "id": 20,
+          "criterion": "Checks for thrills across valve areas",
+          "max_score": 2
+        },
+        {
+          "id": 21,
+          "criterion": "Auscultates with diaphragm — all 5 areas — identifies HR, rhythm, S1/S2",
+          "max_score": 2
+        },
+        {
+          "id": 22,
+          "criterion": "Auscultates with bell — identifies S3 gallop at apex",
+          "max_score": 2
+        },
+        {
+          "id": 23,
+          "criterion": "Assesses JVP correctly at 45 degrees — measures height above sternal angle",
+          "max_score": 2
+        },
+        {
+          "id": 24,
+          "criterion": "Auscultates carotids with bell (breath held) bilaterally",
+          "max_score": 2
+        },
+        {
+          "id": 25,
+          "criterion": "Inspects upper extremities: colour, oedema, clubbing",
+          "max_score": 2
+        },
+        {
+          "id": 26,
+          "criterion": "Palpates upper pulses bilaterally — grades correctly",
+          "max_score": 2
+        },
+        {
+          "id": 27,
+          "criterion": "Inspects lower extremities: oedema, skin changes",
+          "max_score": 2
+        },
+        {
+          "id": 28,
+          "criterion": "Palpates lower pulses bilaterally — all four vessels",
+          "max_score": 2
+        },
+        {
+          "id": 29,
+          "criterion": "Grades oedema correctly (+1 to +4, bilateral comparison)",
+          "max_score": 2
+        },
+        {
+          "id": 30,
+          "criterion": "Assesses capillary refill upper and lower extremities",
+          "max_score": 2
+        },
+        {
+          "id": 31,
+          "criterion": "Maintains privacy, dignity, communicates throughout",
+          "max_score": 2
+        },
+        {
+          "id": 32,
+          "criterion": "Verbalises all findings (positive and negative) as elicited",
+          "max_score": 2
+        },
+        {
+          "id": 33,
+          "criterion": "Follows correct systematic sequence",
+          "max_score": 2
+        },
+        {
+          "id": 34,
+          "criterion": "Identifies elevated JVP and links to heart failure",
+          "max_score": 2
+        },
+        {
+          "id": 35,
+          "criterion": "Identifies S3 gallop and links to heart failure",
+          "max_score": 2
+        }
+      ]
+    },
+    {
+      "name": "Student Report and Documentation",
+      "max_marks": 20,
+      "criteria": [
+        {
+          "id": 36,
+          "criterion": "Documents patient identity and date",
+          "max_score": 2
+        },
+        {
+          "id": 37,
+          "criterion": "Summarises interview accurately and completely",
+          "max_score": 2
+        },
+        {
+          "id": 38,
+          "criterion": "Documents examination findings with correct terminology",
+          "max_score": 2
+        },
+        {
+          "id": 39,
+          "criterion": "Records all abnormal findings and relevant normal findings",
+          "max_score": 2
+        },
+        {
+          "id": 40,
+          "criterion": "Identifies all major clinical problems in priority order",
+          "max_score": 2
+        },
+        {
+          "id": 41,
+          "criterion": "Documents problem with supporting clinical evidence",
+          "max_score": 2
+        },
+        {
+          "id": 42,
+          "criterion": "States referral decision with urgency level",
+          "max_score": 2
+        },
+        {
+          "id": 43,
+          "criterion": "Includes required referral information",
+          "max_score": 2
+        },
+        {
+          "id": 44,
+          "criterion": "Report is organised and clinically structured",
+          "max_score": 2
+        },
+        {
+          "id": 45,
+          "criterion": "No clinically dangerous omissions",
+          "max_score": 2
+        }
+      ]
+    },
+    {
+      "name": "Referral Decision",
+      "max_marks": 10,
+      "criteria": [
+        {
+          "id": 46,
+          "criterion": "Correctly identifies need for urgent referral",
+          "max_score": 2
+        },
+        {
+          "id": 47,
+          "criterion": "States correct referral destination",
+          "max_score": 2
+        },
+        {
+          "id": 48,
+          "criterion": "States correct urgency",
+          "max_score": 2
+        },
+        {
+          "id": 49,
+          "criterion": "Identifies correct immediate actions before referral",
+          "max_score": 2
+        },
+        {
+          "id": 50,
+          "criterion": "Complete clinically appropriate referral justification",
+          "max_score": 2
+        }
+      ]
+    }
+  ]
+}

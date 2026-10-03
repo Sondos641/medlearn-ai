@@ -2,7 +2,12 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 from groq import Groq
+from case_generator import generate_case
 import os
+import uuid
+from virtual_patient import get_patient_response
+from physical_assessment import perform_assessment
+from evaluator import evaluate_session
 
 
 # ============================================================
@@ -23,12 +28,25 @@ CORS(app)
 
 
 # ============================================================
+# TEMPORARY PRACTICE SESSION STORAGE
+# ============================================================
+# For the prototype, sessions are stored in memory.
+# Later we can move these to the database.
+#
+# IMPORTANT:
+# The complete generated case stays here on the backend.
+# hidden_case is NEVER sent to the browser.
+
+practice_sessions = {}
+
+
+# ============================================================
 # HOME
 # ============================================================
 
 @app.route("/")
 def home():
-    return "Nursing Learning Module API is running! 🚀"
+    return "MedLearn AI API is running! 🚀"
 
 
 # ============================================================
@@ -132,24 +150,20 @@ Rules:
 """
 
         response = client.chat.completions.create(
-    model="openai/gpt-oss-20b",
-    messages=[
-        {
-            "role": "system",
-            "content": translation_prompt,
-        },
-        {
-            "role": "user",
-            "content": text,
-        },
-    ],
-    temperature=0.1,
-    max_tokens=6000,
-)
-
-        # ====================================================
-        # DEBUGGING
-        # ====================================================
+            model="openai/gpt-oss-20b",
+            messages=[
+                {
+                    "role": "system",
+                    "content": translation_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": text,
+                },
+            ],
+            temperature=0.1,
+            max_tokens=6000,
+        )
 
         print("\n========== TRANSLATION DEBUG ==========")
 
@@ -160,7 +174,6 @@ Rules:
         print(repr(response.choices[0].message.content))
 
         print("=======================================\n")
-
 
         translation = response.choices[0].message.content
 
@@ -176,6 +189,408 @@ Rules:
         return jsonify({
             "error": str(e)
         }), 500
+
+
+# ============================================================
+# PRACTICE - START SESSION
+# ============================================================
+
+@app.route("/practice/start", methods=["POST"])
+def start_practice():
+    try:
+        data = request.get_json() or {}
+
+        system = data.get("system", "cardiovascular").strip().lower()
+        difficulty = data.get("difficulty", "medium").strip().lower()
+
+        # ----------------------------------------------------
+        # VALIDATE SYSTEM
+        # ----------------------------------------------------
+
+        allowed_systems = [
+            "cardiovascular",
+        ]
+
+        if system not in allowed_systems:
+            return jsonify({
+                "error": "Unsupported body system"
+            }), 400
+
+        # ----------------------------------------------------
+        # VALIDATE DIFFICULTY
+        # ----------------------------------------------------
+
+        allowed_difficulties = [
+            "easy",
+            "medium",
+            "hard",
+        ]
+
+        if difficulty not in allowed_difficulties:
+            return jsonify({
+                "error": "Difficulty must be easy, medium, or hard"
+            }), 400
+
+        print("\n======================================")
+        print("🩺 STARTING PRACTICE SESSION")
+        print("System:", system)
+        print("Difficulty:", difficulty)
+        print("======================================")
+
+        # ----------------------------------------------------
+        # GENERATE THE REAL AI CASE
+        # ----------------------------------------------------
+
+        case_data = generate_case(
+            system=system,
+            difficulty=difficulty,
+        )
+
+        if not case_data:
+            return jsonify({
+                "error": "Failed to generate patient case"
+            }), 500
+
+        # ----------------------------------------------------
+        # CREATE SESSION ID
+        # ----------------------------------------------------
+
+        session_id = str(uuid.uuid4())
+
+        # ----------------------------------------------------
+        # KEEP FULL CASE ON SERVER
+        # ----------------------------------------------------
+
+        practice_sessions[session_id] = {
+            "case_data": case_data,
+            "system": system,
+            "difficulty": difficulty,
+            "conversation_history": [],
+            "assessment_history": [],
+            "student_report": None,
+            "evaluation": None,
+        }
+
+        # ----------------------------------------------------
+        # ONLY SAFE PATIENT DATA GOES TO FRONTEND
+        # ----------------------------------------------------
+
+        student_view = case_data.get("student_view", {})
+
+        patient = {
+            "name": student_view.get("patient_name", ""),
+            "age": student_view.get("age", ""),
+            "sex": student_view.get("sex", ""),
+            "occupation": student_view.get("occupation", ""),
+            "setting": student_view.get("setting", ""),
+            "chief_complaint": student_view.get(
+                "chief_complaint",
+                ""
+            ),
+        }
+
+        print("✅ Practice case generated")
+        print("Session ID:", session_id)
+        print("Patient:", patient.get("name"))
+        print("Hidden case remains on backend.")
+
+        return jsonify({
+            "success": True,
+            "session_id": session_id,
+            "system": system,
+            "difficulty": difficulty,
+            "patient": patient,
+        })
+
+    except Exception as e:
+
+        print("\n❌ PRACTICE START ERROR:")
+        print(str(e))
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+# ============================================================
+# PRACTICE - VIRTUAL PATIENT CHAT
+# ============================================================
+
+@app.route("/practice/<session_id>/chat", methods=["POST"])
+def practice_chat(session_id):
+    try:
+        # ----------------------------------------------------
+        # FIND THE PRACTICE SESSION
+        # ----------------------------------------------------
+
+        session = practice_sessions.get(session_id)
+
+        if not session:
+            return jsonify({
+                "error": "Practice session not found or expired"
+            }), 404
+
+        # ----------------------------------------------------
+        # GET STUDENT MESSAGE
+        # ----------------------------------------------------
+
+        data = request.get_json() or {}
+
+        student_message = data.get("message", "").strip()
+
+        if not student_message:
+            return jsonify({
+                "error": "No message provided"
+            }), 400
+
+        print("\n======================================")
+        print("💬 PRACTICE PATIENT CHAT")
+        print("Session ID:", session_id)
+        print("Student:", student_message)
+        print("======================================")
+
+        # ----------------------------------------------------
+        # GET SESSION DATA
+        # ----------------------------------------------------
+
+        case_data = session["case_data"]
+        conversation_history = session["conversation_history"]
+
+        # ----------------------------------------------------
+        # ASK THE VIRTUAL PATIENT
+        # ----------------------------------------------------
+
+        patient_reply = get_patient_response(
+            case_data=case_data,
+            student_message=student_message,
+            conversation_history=conversation_history,
+        )
+
+        if not patient_reply:
+            return jsonify({
+                "error": "Patient did not return a response"
+            }), 500
+
+        # ----------------------------------------------------
+        # SAVE CONVERSATION
+        # ----------------------------------------------------
+
+        conversation_history.append({
+            "role": "student",
+            "content": student_message,
+        })
+
+        conversation_history.append({
+            "role": "patient",
+            "content": patient_reply,
+        })
+
+        print("Patient:", patient_reply)
+
+        # ----------------------------------------------------
+        # RETURN ONLY THE PATIENT REPLY
+        # ----------------------------------------------------
+
+        return jsonify({
+            "success": True,
+            "reply": patient_reply,
+        })
+
+    except Exception as e:
+
+        print("\n❌ PRACTICE CHAT ERROR:")
+        print(str(e))
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    # ============================================================
+# PRACTICE - PHYSICAL ASSESSMENT
+# ============================================================
+
+@app.route("/practice/<session_id>/assessment", methods=["POST"])
+def practice_assessment(session_id):
+    try:
+        # ----------------------------------------------------
+        # FIND PRACTICE SESSION
+        # ----------------------------------------------------
+
+        session = practice_sessions.get(session_id)
+
+        if not session:
+            return jsonify({
+                "error": "Practice session not found or expired"
+            }), 404
+
+        # ----------------------------------------------------
+        # GET ASSESSMENT ACTION
+        # ----------------------------------------------------
+
+        data = request.get_json() or {}
+
+        action = str(data.get("action", "")).strip()
+
+        if not action:
+            return jsonify({
+                "error": "No assessment action provided"
+            }), 400
+
+        print("\n======================================")
+        print("🩺 PHYSICAL ASSESSMENT")
+        print("Session ID:", session_id)
+        print("Action:", action)
+        print("======================================")
+
+        # ----------------------------------------------------
+        # GET HIDDEN CASE
+        # ----------------------------------------------------
+
+        case_data = session["case_data"]
+
+        # ----------------------------------------------------
+        # PERFORM ASSESSMENT
+        # ----------------------------------------------------
+
+        result = perform_assessment(
+            case_data=case_data,
+            action=action
+        )
+
+        if not result.get("success"):
+            return jsonify({
+                "error": result.get(
+                    "message",
+                    "Invalid physical assessment action"
+                )
+            }), 400
+
+        # ----------------------------------------------------
+        # SAVE ASSESSMENT EVIDENCE
+        # ----------------------------------------------------
+
+        assessment_record = {
+            "action": result["action"],
+            "label": result["label"],
+            "technique": result["technique"],
+            "area": result["area"],
+            "tool": result["tool"],
+            "finding": result["finding"],
+        }
+
+        session["assessment_history"].append(
+            assessment_record
+        )
+
+        print("Assessment:", result["label"])
+        print("Finding:", result["finding"])
+
+        # ----------------------------------------------------
+        # RETURN ONLY THE RESULT OF THE ACTION PERFORMED
+        # ----------------------------------------------------
+
+        return jsonify({
+            "success": True,
+            "assessment": assessment_record
+        })
+
+    except Exception as e:
+
+        print("\n❌ PHYSICAL ASSESSMENT ERROR:")
+        print(str(e))
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+# ============================================================
+# PRACTICE - SUBMIT REPORT AND EVALUATE
+# ============================================================
+
+@app.route("/practice/<session_id>/submit", methods=["POST"])
+def practice_submit(session_id):
+    try:
+        session = practice_sessions.get(session_id)
+
+        if not session:
+            return jsonify({
+                "error": "Practice session not found or expired"
+            }), 404
+
+        data = request.get_json() or {}
+        report = data.get("report") or {}
+
+        required_fields = [
+            "interview_summary",
+            "physical_findings",
+            "identified_problems",
+            "supporting_evidence",
+            "referral_decision",
+        ]
+
+        missing_fields = [
+            field for field in required_fields
+            if not str(report.get(field, "")).strip()
+        ]
+
+        if missing_fields:
+            return jsonify({
+                "error": "Please complete every report field before submitting."
+            }), 400
+
+        # Convert the browser/API session into the evidence structure
+        # already expected by evaluator.py.
+        conversation = session.get("conversation_history", [])
+        interview = []
+        pending_question = None
+
+        for item in conversation:
+            role = item.get("role")
+            content = item.get("content", "")
+
+            if role == "student":
+                pending_question = content
+            elif role == "patient" and pending_question is not None:
+                interview.append({
+                    "student_question": pending_question,
+                    "patient_response": content,
+                })
+                pending_question = None
+
+        evaluation_session = {
+            "case_id": session["case_data"].get("case_id", session_id),
+            "case": session["case_data"],
+            "interview": interview,
+            "physical_assessment": session.get("assessment_history", []),
+            "student_report": report,
+            "evaluation": None,
+        }
+
+        print("\n======================================")
+        print("🤖 EVALUATING PRACTICE SESSION")
+        print("Session ID:", session_id)
+        print("Interview pairs:", len(interview))
+        print("Physical actions:", len(session.get("assessment_history", [])))
+        print("======================================")
+
+        evaluation = evaluate_session(evaluation_session)
+
+        if not evaluation:
+            return jsonify({
+                "error": "Evaluation did not return a result"
+            }), 500
+
+        session["student_report"] = report
+        session["evaluation"] = evaluation
+
+        return jsonify({
+            "success": True,
+            "evaluation": evaluation,
+        })
+
+    except Exception as e:
+        print("\n❌ PRACTICE SUBMIT ERROR:")
+        print(str(e))
+        return jsonify({"error": str(e)}), 500
 
 
 # ============================================================

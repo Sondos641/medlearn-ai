@@ -5,6 +5,7 @@ import Login from './components/auth/Login';
 import StudentDashboard from './pages/StudentDashboard';
 import StudentLearning from './pages/Studentlearning';
 import FacultyDashboard from './pages/FacultyDashboard';
+import StudentPractice from './pages/StudentPractice';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth();
@@ -44,6 +45,15 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      <Route
+  path="/student/practice"
+  element={
+    <ProtectedRoute allowedRoles={['student']}>
+      <StudentPractice />
+    </ProtectedRoute>
+  }
+/>
       
       <Route
         path="/faculty/dashboard"

@@ -6,9 +6,17 @@
 
 from case_generator import generate_case
 from virtual_patient import get_patient_response
-from physical_assessment import perform_assessment
 
+from physical_assessment import (
+    perform_assessment,
+    CARDIOVASCULAR_ACTIONS
+)
 
+from evaluator import (
+    build_session_evidence,
+    load_rubric,
+    evaluate_session
+)
 # ============================================================
 # START PRACTICE SESSION
 # ============================================================
@@ -248,70 +256,112 @@ if __name__ == "__main__":
                             str(e)
                         )
 
-            # =================================================
+                        # =================================================
             # PHYSICAL ASSESSMENT
             # =================================================
 
             elif choice == "2":
 
-                techniques = {
-                    "1": "inspection",
-                    "2": "palpation",
-                    "3": "percussion",
-                    "4": "auscultation"
-                }
-
                 print("\n--------------------------------------")
                 print("PHYSICAL ASSESSMENT")
                 print("--------------------------------------")
 
-                print("1. Inspection")
-                print("2. Palpation")
-                print("3. Percussion")
-                print("4. Auscultation")
-                print("5. Back to Practice Menu")
+                print(
+                    "Choose the specific cardiovascular "
+                    "assessment you want to perform."
+                )
+
+                print(
+                    "You can perform multiple assessments "
+                    "before returning to the Practice menu.\n"
+                )
 
                 while True:
 
+                    print("\n--------------------------------------")
+                    print("CARDIOVASCULAR ASSESSMENT")
+                    print("--------------------------------------")
+
+                    for number, action_info in (
+                        CARDIOVASCULAR_ACTIONS.items()
+                    ):
+
+                        tool_text = ""
+
+                        if action_info["tool"]:
+
+                            tool_text = (
+                                f" "
+                                f"[{action_info['tool'].title()}]"
+                            )
+
+                        print(
+                            f"{number}. "
+                            f"{action_info['label']}"
+                            f"{tool_text}"
+                        )
+
+                    print("16. Back to Practice Menu")
+
                     assessment_choice = input(
-                        "\nChoose a technique (1-5): "
+                        "\nChoose an assessment action "
+                        "(1-16): "
                     ).strip()
 
-                    if assessment_choice == "5":
+                    if assessment_choice == "16":
                         break
-
-                    technique = techniques.get(
-                        assessment_choice
-                    )
-
-                    if not technique:
-                        print("❌ Invalid choice.")
-                        continue
 
                     result = perform_assessment(
                         case,
-                        technique
+                        assessment_choice
+                    )
+
+                    if not result["success"]:
+
+                        print(
+                            f"\n❌ {result['message']}"
+                        )
+
+                        continue
+
+                    print("\n--------------------------------------")
+
+                    print(
+                        f"Action: "
+                        f"{result['label']}"
                     )
 
                     print(
-                        f"\nTechnique: "
-                        f"{technique.title()}"
+                        f"Technique: "
+                        f"{result['technique'].title()}"
                     )
+
+                    print(
+                        f"Area: "
+                        f"{result['area']}"
+                    )
+
+                    if result["tool"]:
+
+                        print(
+                            f"Tool: "
+                            f"{result['tool'].title()}"
+                        )
 
                     print(
                         f"Finding: "
                         f"{result['finding']}"
                     )
 
-                    # Save evidence for future evaluation
+                    # Save detailed evidence for AI evaluation
                     session["physical_assessment"].append({
-                        "technique": technique,
+                        "action": result["action"],
+                        "label": result["label"],
+                        "technique": result["technique"],
+                        "area": result["area"],
+                        "tool": result["tool"],
                         "finding": result["finding"]
                     })
-
-            # =================================================
-            # END SESSION
-            # =================================================
 
             elif choice == "3":
 
@@ -410,8 +460,107 @@ if __name__ == "__main__":
             "\n✅ Student report submitted successfully."
         )
 
+        # ====================================================
+        # PREPARE DATA FOR AI EVALUATION
+        # ====================================================
+
+        evidence = build_session_evidence(session)
+
+        rubric = load_rubric(
+            session["case"]["system"]
+        )
+
+        print("\n======================================")
+        print("       EVALUATION DATA READY")
+        print("======================================")
+
         print(
-            "\nNext step: AI Evaluation /100 🎯"
+            f"\nCase ID: "
+            f"{evidence['case_id']}"
+        )
+
+        print(
+            f"System: "
+            f"{evidence['system']}"
+        )
+
+        print(
+            f"Interview questions: "
+            f"{len(evidence['interview'])}"
+        )
+
+        print(
+            f"Physical assessment actions: "
+            f"{len(evidence['physical_assessment'])}"
+        )
+
+        print(
+            f"Report submitted: "
+            f"{bool(evidence['student_report'])}"
+        )
+
+        print(
+            f"Rubric sections loaded: "
+            f"{len(rubric['sections'])}"
+        )
+
+        print(
+            "\n✅ Practice session evidence and rubric "
+            "are ready for AI evaluation."
+        )
+        # ====================================================
+        # RUN AI EVALUATION
+        # ====================================================
+
+        print("\n🤖 Evaluating student performance...")
+
+        evaluation = evaluate_session(session)
+
+        session["evaluation"] = evaluation
+
+        print("\n======================================")
+        print("          PRACTICE RESULT")
+        print("======================================")
+
+        print(
+            f"\nFinal Score: "
+            f"{evaluation['score']}/100"
+        )
+
+        print("\n--------------------------------------")
+        print("WHAT YOU DID WELL")
+        print("--------------------------------------")
+
+        for item in evaluation["feedback"]["did_well"]:
+            print(f"• {item}")
+
+        print("\n--------------------------------------")
+        print("MISSED")
+        print("--------------------------------------")
+
+        for item in evaluation["feedback"]["missed"]:
+            print(f"• {item}")
+
+        print("\n--------------------------------------")
+        print("PARTIALLY COMPLETED")
+        print("--------------------------------------")
+
+        for item in evaluation["feedback"]["partially_completed"]:
+            print(f"• {item}")
+
+        print("\n--------------------------------------")
+        print("TOPICS TO FOCUS ON")
+        print("--------------------------------------")
+
+        for item in evaluation["feedback"]["focus_topics"]:
+            print(f"• {item}")
+
+        print("\n--------------------------------------")
+        print("REPORT FEEDBACK")
+        print("--------------------------------------")
+
+        print(
+            evaluation["feedback"]["report_feedback"]
         )
 
     except Exception as e:
