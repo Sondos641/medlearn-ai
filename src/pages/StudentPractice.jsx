@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, NavLink } from 'react-router-dom';
 import logo from '../assets/Logo 2 without background.png';
@@ -17,6 +17,83 @@ const StudentPractice = () => {
   const [practiceError, setPracticeError] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceError, setVoiceError] = useState('');
+  const [autoSpeak, setAutoSpeak] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const recognitionRef = useRef(null);
+  const autoSpeakRef = useRef(false);
+  const speechTokenRef = useRef(0);
+
+  const stopSpeaking = () => {
+    speechTokenRef.current += 1;
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
+
+  const speakPatient = (text) => {
+    if (!('speechSynthesis' in window)) {
+      setVoiceError('Text-to-speech is not supported in this browser.');
+      return;
+    }
+    stopSpeaking();
+    if (!text) return;
+    const token = speechTokenRef.current;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.95;
+    utterance.onstart = () => { if (token === speechTokenRef.current) setIsSpeaking(true); };
+    utterance.onend = () => { if (token === speechTokenRef.current) setIsSpeaking(false); };
+    utterance.onerror = (event) => {
+      if (token === speechTokenRef.current) {
+        setIsSpeaking(false);
+        if (event.error !== 'canceled' && event.error !== 'interrupted') {
+          setVoiceError('Patient audio could not be played.');
+        }
+      }
+    };
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const stopListening = () => {
+    if (recognitionRef.current) recognitionRef.current.stop();
+    setIsListening(false);
+  };
+
+  const toggleListening = () => {
+    if (isListening) { stopListening(); return; }
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Recognition) {
+      setVoiceError('Speech recognition is unavailable. Try Chrome or Edge.');
+      return;
+    }
+    stopSpeaking();
+    setVoiceError('');
+    const recognition = new Recognition();
+    recognitionRef.current = recognition;
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setInputMessage((previous) => [previous.trim(), transcript.trim()].filter(Boolean).join(' '));
+    };
+    recognition.onerror = (event) => {
+      if (event.error !== 'aborted') setVoiceError(`Microphone: ${event.error}. Check browser permissions.`);
+      setIsListening(false);
+    };
+    recognition.onend = () => { setIsListening(false); recognitionRef.current = null; };
+    try { recognition.start(); setIsListening(true); }
+    catch { setVoiceError('Could not start microphone recognition.'); setIsListening(false); }
+  };
+
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.abort();
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    };
+  }, []);
+
   const [assessmentHistory, setAssessmentHistory] = useState([]);
   const [activeAssessment, setActiveAssessment] = useState(null);
   const [assessmentError, setAssessmentError] = useState('');
@@ -31,6 +108,7 @@ const StudentPractice = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [evaluation, setEvaluation] = useState(null);
+  const [resultTab, setResultTab] = useState('missed');
   useEffect(() => {
     const isDark = localStorage.getItem('darkMode') === 'true';
     setIsDarkMode(isDark);
@@ -78,6 +156,9 @@ const StudentPractice = () => {
         chiefComplaint: data.patient.chief_complaint,
       });
       setSessionId(data.session_id);
+      stopListening();
+      stopSpeaking();
+      setVoiceError('');
       setMessages([]);
       setAssessmentHistory([]);
       setActiveAssessment(null);
@@ -104,6 +185,8 @@ const StudentPractice = () => {
   const handleSendMessage = async () => {
     const messageText = inputMessage.trim();
     if (!messageText || !sessionId || isSending) return;
+    stopListening();
+    stopSpeaking();
     setMessages((prev) => [
       ...prev,
       { id: `student-${Date.now()}`, type: 'student', content: messageText },
@@ -127,6 +210,7 @@ const StudentPractice = () => {
         ...prev,
         { id: `patient-${Date.now()}`, type: 'patient', content: data.reply },
       ]);
+      if (autoSpeakRef.current) speakPatient(data.reply);
     } catch (error) {
       console.error('PRACTICE CHAT ERROR:', error);
       setMessages((prev) => [
@@ -199,6 +283,8 @@ const StudentPractice = () => {
   };
 
   const handleEndSession = () => {
+    stopListening();
+    stopSpeaking();
     setSubmitError('');
     setSessionStage('report');
   };
@@ -239,6 +325,9 @@ const StudentPractice = () => {
   };
 
   const handleNewSession = () => {
+    stopListening();
+    stopSpeaking();
+    setVoiceError('');
     setSessionStarted(false);
     setSessionId(null);
     setPatient(null);
@@ -832,9 +921,28 @@ const StudentPractice = () => {
                             </div>
                           )}
                           {message.content}
+                          {message.type === 'patient' && !message.id.startsWith('error-') && (
+                            <button type="button" onClick={() => speakPatient(message.content)}
+                              title="Read patient response aloud"
+                              style={{ display: 'block', marginTop: '8px', padding: '5px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text)', cursor: 'pointer', fontSize: '12px' }}>
+                              🔊 Listen
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
+                  </div>
+                  <div style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '14px', color: 'var(--text-secondary)', fontSize: '12px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={autoSpeak} onChange={(e) => { autoSpeakRef.current = e.target.checked; setAutoSpeak(e.target.checked); if (!e.target.checked) stopSpeaking(); }} />
+                      🔊 Auto-speak patient replies
+                    </label>
+                    <button type="button" onClick={stopSpeaking} disabled={!isSpeaking}
+                      style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--cards)', color: 'var(--text)', opacity: isSpeaking ? 1 : 0.5, cursor: isSpeaking ? 'pointer' : 'not-allowed' }}>
+                      Stop audio
+                    </button>
+                    {isListening && <span style={{ color: 'var(--error)' }}>🎤 Listening…</span>}
+                    {voiceError && <span role="alert" style={{ color: 'var(--error)' }}>{voiceError}</span>}
                   </div>
                   {/* CHAT INPUT */}
                   <div
@@ -845,6 +953,12 @@ const StudentPractice = () => {
                       gap: '12px',
                     }}
                   >
+                    <button type="button" onClick={toggleListening} disabled={isSending}
+                      title={isListening ? 'Stop microphone' : 'Speak your question'}
+                      aria-label={isListening ? 'Stop microphone' : 'Start microphone'}
+                      style={{ padding: '10px 13px', borderRadius: '12px', border: '1px solid var(--border)', background: isListening ? '#b91c1c' : 'var(--cards)', color: isListening ? 'white' : 'var(--text)', cursor: isSending ? 'not-allowed' : 'pointer', fontSize: '18px' }}>
+                      {isListening ? '⏹️' : '🎤'}
+                    </button>
                     <input
                       type="text"
                       value={inputMessage}
@@ -1090,7 +1204,7 @@ const StudentPractice = () => {
                 <div
                   style={{
                     width: '100%',
-                    maxWidth: sessionStage === 'result' ? '900px' : '780px',
+                    maxWidth: sessionStage === 'result' ? '980px' : '780px',
                     maxHeight: '90vh',
                     overflowY: 'auto',
                     background: 'var(--background)',
@@ -1166,47 +1280,75 @@ const StudentPractice = () => {
                     </>
                   ) : (
                     <>
-                      <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                        <div style={{ fontSize: '42px', marginBottom: '8px' }}>🎓</div>
-                        <h2 style={{ margin: '0 0 6px', color: 'var(--text)' }}>Practice Result</h2>
-                        <div style={{ fontSize: '46px', fontWeight: 800, color: 'var(--primary)' }}>
-                          {evaluation?.score ?? 0}/100
+                      {/* Results overview: compact and always visible at the top */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '18px' }}>
+                        <div>
+                          <div style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', marginBottom: '5px' }}>MEDLEARN AI · PRACTICE RESULTS</div>
+                          <h2 style={{ margin: '0 0 5px', fontSize: '25px', color: 'var(--text)' }}>Your Clinical Performance</h2>
+                          <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{patient?.name} · Cardiovascular assessment</div>
+                        </div>
+                        <div style={{ background: 'var(--cards)', border: '1px solid var(--border)', borderRadius: '16px', padding: '12px 22px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '35px', fontWeight: 800, color: 'var(--primary)', lineHeight: 1.1 }}>{evaluation?.score ?? 0}<span style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>/100</span></div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '5px' }}>Overall score</div>
                         </div>
                       </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '14px' }}>
+                      <div style={{ height: '8px', background: 'var(--border)', borderRadius: '999px', overflow: 'hidden', marginBottom: '16px' }}>
+                        <div style={{ width: `${Math.max(0, Math.min(100, Number(evaluation?.score) || 0))}%`, height: '100%', background: 'var(--primary)', borderRadius: '999px' }} />
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '10px', marginBottom: '18px' }}>
                         {[
-                          ['✅ What You Did Well', feedback.did_well],
-                          ['❌ Missed', feedback.missed],
-                          ['🟡 Partially Completed', feedback.partially_completed],
-                          ['📚 Topics to Focus On', feedback.focus_topics],
-                        ].map(([title, items]) => (
-                          <div key={title} style={{ padding: '16px', border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--cards)' }}>
-                            <h3 style={{ margin: '0 0 10px', fontSize: '14px', color: 'var(--text)' }}>{title}</h3>
-                            {Array.isArray(items) && items.length > 0 ? (
-                              <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.6 }}>
-                                {items.map((item, index) => <li key={index}>{String(item)}</li>)}
-                              </ul>
-                            ) : (
-                              <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '13px' }}>None recorded.</p>
-                            )}
+                          ['✓ Achieved', feedback.did_well, '#16a34a'],
+                          ['◐ Partial', feedback.partially_completed, '#d97706'],
+                          ['✕ Missed', feedback.missed, '#dc2626'],
+                        ].map(([label, items, color]) => (
+                          <div key={label} style={{ background: 'var(--cards)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
+                            <div style={{ color, fontSize: '25px', fontWeight: 800 }}>{Array.isArray(items) ? items.length : 0}</div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{label}</div>
                           </div>
                         ))}
                       </div>
-
-                      <div style={{ marginTop: '14px', padding: '16px', border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--cards)' }}>
-                        <h3 style={{ margin: '0 0 8px', fontSize: '14px', color: 'var(--text)' }}>📝 Report Feedback</h3>
-                        <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.6 }}>
-                          {feedback.report_feedback || 'No report feedback returned.'}
-                        </p>
+                      <div style={{ background: 'var(--cards)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                        <h3 style={{ color: 'var(--text)', margin: '0 0 7px', fontSize: '15px' }}>📝 Your feedback</h3>
+                        <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '13px', lineHeight: 1.65 }}>{feedback.report_feedback || 'No report feedback returned.'}</p>
                       </div>
-
-                      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-                        <button
-                          onClick={handleNewSession}
-                          style={{ padding: '12px 22px', borderRadius: '10px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 600, cursor: 'pointer' }}
-                        >
-                          Start New Practice Session
+                      <div style={{ background: 'var(--cards)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                        <h3 style={{ color: 'var(--text)', margin: '0 0 10px', fontSize: '15px' }}>Assessment details</h3>
+                        <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                          {[
+                            ['missed', 'Missed', feedback.missed],
+                            ['partial', 'Partially completed', feedback.partially_completed],
+                            ['achieved', 'What you did well', feedback.did_well],
+                            ['focus', 'Topics to focus on', feedback.focus_topics],
+                          ].map(([id, label, items]) => (
+                            <button key={id} type="button" onClick={() => setResultTab(id)}
+                              style={{ padding: '9px 12px', borderRadius: '9px', border: resultTab === id ? '1px solid var(--primary)' : '1px solid var(--border)', background: resultTab === id ? 'var(--primary)' : 'var(--background)', color: resultTab === id ? '#fff' : 'var(--text)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                              {label} ({Array.isArray(items) ? items.length : 0})
+                            </button>
+                          ))}
+                        </div>
+                        {(() => {
+                          const groups = { missed: feedback.missed, partial: feedback.partially_completed, achieved: feedback.did_well, focus: feedback.focus_topics };
+                          const items = groups[resultTab];
+                          return Array.isArray(items) && items.length ? (
+                            <>
+                              <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap' }}>
+                                {items.map((item, index) => (
+                                  <span key={index} style={{ border: '1px solid var(--border)', borderRadius: '8px', padding: '7px 10px', background: 'var(--background)', color: 'var(--text)', fontSize: '12px', lineHeight: 1.4 }}>
+                                    {String(item)}
+                                  </span>
+                                ))}
+                              </div>
+                              {items.every(item => typeof item === 'number' || /^\d+$/.test(String(item))) && (
+                                <p style={{ margin: '12px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>These are rubric criterion IDs returned by the evaluator. Their descriptions must be mapped from the backend rubric; IDs alone do not explain the clinical skill.</p>
+                              )}
+                            </>
+                          ) : <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '13px' }}>No items in this category.</p>;
+                        })()}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <button onClick={handleNewSession}
+                          style={{ padding: '12px 20px', borderRadius: '10px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
+                          Start New Practice Session →
                         </button>
                       </div>
                     </>

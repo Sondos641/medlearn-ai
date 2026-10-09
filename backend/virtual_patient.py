@@ -313,22 +313,22 @@ Return ONLY what the patient would say.
     # ========================================================
     # ASK GROQ
     # ========================================================
-
-    response = client.chat.completions.create(
-        model="openai/gpt-oss-20b",
-        messages=messages,
-        temperature=0.3,
-        max_tokens=1000,
-    )
-
-    patient_reply = response.choices[0].message.content
-
-    if not patient_reply:
-        raise ValueError(
-            "Virtual patient returned an empty response."
+    for attempt in range(2):
+        response = client.chat.completions.create(
+            model="openai/gpt-oss-20b",
+            messages=messages,
+            temperature=0.3,
+            max_completion_tokens=3000,
         )
 
-    return patient_reply.strip()
+        patient_reply = response.choices[0].message.content
+
+        if patient_reply and patient_reply.strip():
+            return patient_reply.strip()
+
+        print("Empty response. Trying again...")
+
+    raise ValueError("Virtual patient failed after two attempts.")
 
 
 # ============================================================
