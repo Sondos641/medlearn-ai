@@ -8,6 +8,9 @@ import uuid
 from virtual_patient import get_patient_response
 from physical_assessment import perform_assessment
 from evaluator import evaluate_session
+from database import init_db, save_session, load_sessions, DB_PATH
+import sqlite3
+import json
 
 
 # ============================================================
@@ -27,6 +30,8 @@ app = Flask(__name__)
 CORS(app)
 
 
+
+
 # ============================================================
 # TEMPORARY PRACTICE SESSION STORAGE
 # ============================================================
@@ -37,7 +42,8 @@ CORS(app)
 # The complete generated case stays here on the backend.
 # hidden_case is NEVER sent to the browser.
 
-practice_sessions = {}
+init_db()
+practice_sessions = load_sessions()
 
 
 # ============================================================
@@ -262,14 +268,17 @@ def start_practice():
         # ----------------------------------------------------
 
         practice_sessions[session_id] = {
-            "case_data": case_data,
-            "system": system,
-            "difficulty": difficulty,
-            "conversation_history": [],
-            "assessment_history": [],
-            "student_report": None,
-            "evaluation": None,
-        }
+      "user_id": data.get("user_id"),
+      "case_data": case_data,
+      "system": system,
+      "difficulty": difficulty,
+      "conversation_history": [],
+      "assessment_history": [],
+      "student_report": None,
+      "evaluation": None,
+}
+
+        save_session(session_id, practice_sessions[session_id])
 
         # ----------------------------------------------------
         # ONLY SAFE PATIENT DATA GOES TO FRONTEND
@@ -383,6 +392,7 @@ def practice_chat(session_id):
             "role": "patient",
             "content": patient_reply,
         })
+        save_session(session_id, session)
 
         print("Patient:", patient_reply)
 
@@ -480,6 +490,7 @@ def practice_assessment(session_id):
         session["assessment_history"].append(
             assessment_record
         )
+        save_session(session_id, session)
 
         print("Assessment:", result["label"])
         print("Finding:", result["finding"])
@@ -581,6 +592,7 @@ def practice_submit(session_id):
 
         session["student_report"] = report
         session["evaluation"] = evaluation
+        save_session(session_id, session)
 
         return jsonify({
             "success": True,
@@ -591,6 +603,55 @@ def practice_submit(session_id):
         print("\n❌ PRACTICE SUBMIT ERROR:")
         print(str(e))
         return jsonify({"error": str(e)}), 500
+
+
+        # ============================================================
+# STUDENT DASHBOARD - RECENT ACTIVITY
+# ============================================================
+
+@app.route("/student/<user_id>/activity", methods=["GET"])
+def student_activity(user_id):
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+
+            rows = conn.execute("""
+                SELECT session_id, session_data, created_at
+                FROM practice_sessions
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                LIMIT 10
+            """, (user_id,)).fetchall()
+
+        activities = []
+
+        for row in rows:
+            session = json.loads(row["session_data"])
+            case_data = session.get("case_data", {})
+            student_view = case_data.get("student_view", {})
+            evaluation = session.get("evaluation")
+
+            activities.append({
+                "session_id": row["session_id"],
+                "title": student_view.get(
+                    "chief_complaint",
+                    "Practice Session"
+                ),
+                "score": evaluation.get("score") if evaluation else None,
+                "completed": evaluation is not None,
+                "created_at": row["created_at"],
+            })
+
+        return jsonify({
+            "success": True,
+            "activities": activities,
+        })
+
+    except Exception as e:
+        print("STUDENT ACTIVITY ERROR:", str(e))
+        return jsonify({"error": str(e)}), 500
+
+
 
 
 # ============================================================

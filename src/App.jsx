@@ -8,21 +8,28 @@ import FacultyDashboard from './pages/FacultyDashboard';
 import StudentPractice from './pages/StudentPractice';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user } = useAuth();
-  
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   if (!user) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
-  
+
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
-  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return children;
 };
 
 function AppRoutes() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   
   return (
     <Routes>

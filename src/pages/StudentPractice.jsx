@@ -6,6 +6,9 @@ const StudentPractice = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [activities, setActivities] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [activityError, setActivityError] = useState('');
   const [activeTab, setActiveTab] = useState('conversation');
   const [inputMessage, setInputMessage] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState(null);
@@ -109,13 +112,47 @@ const StudentPractice = () => {
   const [submitError, setSubmitError] = useState('');
   const [evaluation, setEvaluation] = useState(null);
   const [resultTab, setResultTab] = useState('missed');
+  // Dark Mode
   useEffect(() => {
     const isDark = localStorage.getItem('darkMode') === 'true';
     setIsDarkMode(isDark);
+
     if (isDark) {
       document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
   }, []);
+
+  // Fetch student's recent practice activities
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchActivities = async () => {
+      try {
+        setActivityLoading(true);
+        setActivityError('');
+
+        const response = await fetch(
+          `http://127.0.0.1:5000/student/${user.id}/activity`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to load activities');
+        }
+
+        setActivities(data.activities || []);
+      } catch (error) {
+        setActivityError(error.message);
+      } finally {
+        setActivityLoading(false);
+      }
+    };
+
+    fetchActivities();
+  }, [user?.id]);
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
@@ -141,6 +178,7 @@ const StudentPractice = () => {
         body: JSON.stringify({
           system: 'cardiovascular',
           difficulty: selectedDifficulty,
+          user_id: user?.id,
         }),
       });
       const data = await response.json();

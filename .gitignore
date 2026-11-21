@@ -40,3 +40,9 @@ backend/data/textbook/medical_book_chunks.txt
 .env
 *.env
 backend/.env
+
+# SQLite database
+backend/data/medlearn.db*
+
+# Local backup files
+backend/app_backup.py

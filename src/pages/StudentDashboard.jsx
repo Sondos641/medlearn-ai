@@ -7,6 +7,10 @@ const StudentDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [activities, setActivities] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [activityError, setActivityError] = useState('');
+
 
   useEffect(() => {
     const isDark = localStorage.getItem('darkMode') === 'true';
@@ -18,6 +22,36 @@ const StudentDashboard = () => {
       document.documentElement.classList.remove('dark');
     }
   }, []);
+    // Fetch student's recent practice activities
+    useEffect(() => {
+      if (!user?.id) return;
+  
+      const fetchActivities = async () => {
+        try {
+          setActivityLoading(true);
+          setActivityError('');
+  
+          const response = await fetch(
+            `http://127.0.0.1:5000/student/${user.id}/activity`
+          );
+  
+          const data = await response.json();
+  
+          if (!response.ok) {
+            throw new Error(data.error || 'Failed to load activities');
+          }
+  
+          setActivities(data.activities || []);
+        } catch (error) {
+          console.error('Activity fetch error:', error);
+          setActivityError(error.message);
+        } finally {
+          setActivityLoading(false);
+        }
+      };
+  
+      fetchActivities();
+    }, [user?.id]);
 
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
@@ -382,6 +416,7 @@ const StudentDashboard = () => {
           </div>
         </div>
 
+        
         {/* ================= RECENT ACTIVITY ================= */}
 
         <div style={{ marginTop: '32px' }}>
@@ -393,107 +428,75 @@ const StudentDashboard = () => {
           </h2>
 
           <div className="card">
-            {/* Activity 1 */}
-
-            <div
-              style={{
-                padding: '16px',
-                borderBottom: '1px solid var(--border)',
-              }}
-              className="flex-between"
-            >
-              <div>
-                <p
+            {activityLoading ? (
+              <p style={{ padding: '16px' }}>
+                Loading recent activities...
+              </p>
+            ) : activityError ? (
+              <p style={{ padding: '16px', color: 'var(--error)' }}>
+                {activityError}
+              </p>
+            ) : activities.length === 0 ? (
+              <p style={{ padding: '16px' }}>
+                No practice activities yet. Start your first practice session!
+              </p>
+            ) : (
+              activities.map((activity, index) => (
+                <div
+                  key={activity.session_id}
                   style={{
-                    fontWeight: 500,
-                    marginBottom: '4px',
+                    padding: '16px',
+                    borderBottom:
+                      index !== activities.length - 1
+                        ? '1px solid var(--border)'
+                        : 'none',
                   }}
+                  className="flex-between"
                 >
-                  Completed Practice Session - Respiratory
-                  Assessment
-                </p>
+                  <div>
+                    <p
+                      style={{
+                        fontWeight: 500,
+                        marginBottom: '4px',
+                      }}
+                    >
+                      {activity.completed
+                        ? `Completed Practice Session - ${activity.title}`
+                        : `Practice Session - ${activity.title}`}
+                    </p>
 
-                <p
-                  className="text-body"
-                  style={{ fontSize: '12px' }}
-                >
-                  2 hours ago • Score: 85%
-                </p>
-              </div>
+                    <p
+                      className="text-body"
+                      style={{ fontSize: '12px' }}
+                    >
+                      {new Date(
+                        activity.created_at.replace(' ', 'T') + 'Z'
+                      ).toLocaleString()} 
+                      {' • '}
+                      {activity.completed
+                        ? `Score: ${activity.score}%`
+                        : 'Not completed yet'}
+                    </p>
+                  </div>
 
-              <span
-                style={{ color: 'var(--success)' }}
-              >
-                ✓ Completed
-              </span>
-            </div>
-
-            {/* Activity 2 */}
-
-            <div
-              style={{
-                padding: '16px',
-                borderBottom: '1px solid var(--border)',
-              }}
-              className="flex-between"
-            >
-              <div>
-                <p
-                  style={{
-                    fontWeight: 500,
-                    marginBottom: '4px',
-                  }}
-                >
-                  Learning Module - Cardiac System
-                </p>
-
-                <p
-                  className="text-body"
-                  style={{ fontSize: '12px' }}
-                >
-                  Yesterday • Progress: 100%
-                </p>
-              </div>
-
-              <span
-                style={{ color: 'var(--success)' }}
-              >
-                ✓ Completed
-              </span>
-            </div>
-
-            {/* Activity 3 */}
-
-            <div
-              style={{ padding: '16px' }}
-              className="flex-between"
-            >
-              <div>
-                <p
-                  style={{
-                    fontWeight: 500,
-                    marginBottom: '4px',
-                  }}
-                >
-                  Practice Session - Neurological Assessment
-                </p>
-
-                <p
-                  className="text-body"
-                  style={{ fontSize: '12px' }}
-                >
-                  2 days ago • Score: 78%
-                </p>
-              </div>
-
-              <span
-                style={{ color: 'var(--success)' }}
-              >
-                ✓ Completed
-              </span>
-            </div>
+                  <span
+                    style={{
+                      color: activity.completed
+                        ? 'var(--success)'
+                        : 'var(--warning)',
+                    }}
+                  >
+                    {activity.completed
+                      ? '✓ Completed'
+                      : 'In Progress'}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
+
+
       </div>
     </div>
   );
