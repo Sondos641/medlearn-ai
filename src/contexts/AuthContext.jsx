@@ -34,15 +34,32 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Please enter email and password');
       }
       
-      // Extract name from email (everything before @)
-      const name = email.split('@')[0];
-      
-      const userData = {
-        id: Math.random().toString(36).substr(2, 9),
-        email: email,
-        name: name,
-        role: role,
-      };
+       // Keep the same user ID for the same email
+       const normalizedEmail = email.trim().toLowerCase();
+       const name = normalizedEmail.split('@')[0];
+
+       const storageKey = `mock_user_id_${normalizedEmail}`;
+
+       const savedUser = localStorage.getItem('user');
+       const existingUser = savedUser ? JSON.parse(savedUser) : null;
+
+       let userId = localStorage.getItem(storageKey);
+
+if (!userId) {
+  userId =
+    existingUser?.email?.toLowerCase() === normalizedEmail
+      ? existingUser.id
+      : Math.random().toString(36).substr(2, 9);
+
+  localStorage.setItem(storageKey, userId);
+}
+
+const userData = {
+  id: userId,
+  email: normalizedEmail,
+  name: name,
+  role: role,
+};
       
       const token = 'mock-jwt-token-' + Date.now();
       
