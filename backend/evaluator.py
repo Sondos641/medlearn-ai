@@ -248,7 +248,7 @@ You must return one result for EVERY rubric criterion.
             }
         ],
         temperature=0.1,
-        max_tokens=7000
+        max_tokens=6000
     )
 
     raw_response = response.choices[0].message.content
@@ -350,6 +350,30 @@ You must return one result for EVERY rubric criterion.
             )
         })
 
+    def map_feedback_items(items):
+        mapped_items = []
+
+        for item in items:
+            try:
+                criterion_id = int(item)
+            except (ValueError, TypeError):
+                mapped_items.append(item)
+                continue
+
+            official_criterion = rubric_lookup.get(criterion_id)
+
+            if official_criterion:
+                mapped_items.append(
+                    official_criterion["criterion"]
+                )
+            else:
+                mapped_items.append(item)
+
+        return mapped_items
+
+
+
+
     # --------------------------------------------------------
     # 9. Python calculates final score
     # --------------------------------------------------------
@@ -357,6 +381,7 @@ You must return one result for EVERY rubric criterion.
     final_score = calculate_score(
         validated_criteria
     )
+
 
     # --------------------------------------------------------
     # 10. Build final evaluation
@@ -367,21 +392,17 @@ You must return one result for EVERY rubric criterion.
         "total_marks": rubric["total_marks"],
         "criteria": validated_criteria,
         "feedback": {
-            "did_well": evaluation.get(
-                "did_well",
-                []
+            "did_well": map_feedback_items(
+                evaluation.get("did_well", [])
             ),
-            "missed": evaluation.get(
-                "missed",
-                []
+            "missed": map_feedback_items(
+                evaluation.get("missed", [])
             ),
-            "partially_completed": evaluation.get(
-                "partially_completed",
-                []
+            "partially_completed": map_feedback_items(
+                evaluation.get("partially_completed", [])
             ),
-            "focus_topics": evaluation.get(
-                "focus_topics",
-                []
+            "focus_topics": map_feedback_items(
+                evaluation.get("focus_topics", [])
             ),
             "report_feedback": evaluation.get(
                 "report_feedback",
