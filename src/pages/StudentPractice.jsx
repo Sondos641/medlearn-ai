@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, NavLink } from 'react-router-dom';
+import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 import logo from '../assets/Logo 2 without background.png';
 const StudentPractice = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [activities, setActivities] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
@@ -96,6 +97,14 @@ const StudentPractice = () => {
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     };
   }, []);
+  useEffect(() => {
+    const resumeSessionId = location.state?.resumeSessionId;
+  
+    if (resumeSessionId && user?.id) {
+      handleResumePractice(resumeSessionId);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state?.resumeSessionId, user?.id]);
 
   const [assessmentHistory, setAssessmentHistory] = useState([]);
   const [activeAssessment, setActiveAssessment] = useState(null);
@@ -167,6 +176,66 @@ const StudentPractice = () => {
     logout();
     navigate('/login');
   };
+
+
+const handleResumePractice = async (resumeSessionId) => {
+  setIsGenerating(true);
+  setPracticeError('');
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:5000/student/${user.id}/practice/${resumeSessionId}`
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to resume practice session');
+    }
+
+    setPatient({
+      name: data.patient.name,
+      age: data.patient.age,
+      sex: data.patient.sex,
+      occupation: data.patient.occupation,
+      setting: data.patient.setting,
+      chiefComplaint: data.patient.chief_complaint,
+    });
+
+    setSessionId(data.session_id);
+    setSelectedDifficulty(data.difficulty);
+
+    setMessages(
+      data.conversation_history.map((message, index) => ({
+        id: `resumed-${index}`,
+        type: message.role === 'student' ? 'student' : 'patient',
+        content: message.content,
+      }))
+    );
+
+    setAssessmentHistory(data.assessment_history || []);
+    setReport(data.student_report || {
+      interview_summary: '',
+      physical_findings: '',
+      identified_problems: '',
+      supporting_evidence: '',
+      referral_decision: '',
+    });
+
+    setEvaluation(data.evaluation);
+    setSessionStage('simulation');
+    setActiveTab('conversation');
+    setSessionStarted(true);
+
+  } catch (error) {
+    console.error('RESUME PRACTICE ERROR:', error);
+    setPracticeError(error.message || 'Could not resume practice session.');
+  } finally {
+    setIsGenerating(false);
+  }
+};
+
+
   const handleStartPractice = async () => {
     if (!selectedDifficulty) return;
     setIsGenerating(true);

@@ -652,6 +652,60 @@ def student_activity(user_id):
         return jsonify({"error": str(e)}), 500
 
 
+    
+@app.route("/student/<user_id>/practice/<session_id>", methods=["GET"])
+def resume_practice(user_id, session_id):
+    try:
+        session = practice_sessions.get(session_id)
+
+        if not session:
+            return jsonify({
+                "error": "Practice session not found"
+            }), 404
+
+        if str(session.get("user_id")) != str(user_id):
+            return jsonify({
+                "error": "You are not authorized to access this session"
+            }), 403
+
+        case_data = session.get("case_data", {})
+        student_view = case_data.get("student_view", {})
+
+        patient = {
+            "name": student_view.get("patient_name", ""),
+            "age": student_view.get("age", ""),
+            "sex": student_view.get("sex", ""),
+            "occupation": student_view.get("occupation", ""),
+            "setting": student_view.get("setting", ""),
+            "chief_complaint": student_view.get(
+                "chief_complaint", ""
+            ),
+        }
+
+        return jsonify({
+            "success": True,
+            "session_id": session_id,
+            "patient": patient,
+            "conversation_history": session.get(
+                "conversation_history", []
+            ),
+            "assessment_history": session.get(
+                "assessment_history", []
+            ),
+            "student_report": session.get("student_report"),
+            "evaluation": session.get("evaluation"),
+            "difficulty": session.get("difficulty"),
+            "system": session.get("system"),
+        })
+
+    except Exception as e:
+        print("RESUME PRACTICE ERROR:", str(e))
+        return jsonify({"error": str(e)}), 500
+
+
+
+
+
 
 
 # ============================================================

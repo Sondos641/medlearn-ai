@@ -479,17 +479,54 @@ const StudentDashboard = () => {
                     </p>
                   </div>
 
-                  <span
+                  <div
                     style={{
-                      color: activity.completed
-                        ? 'var(--success)'
-                        : 'var(--warning)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
                     }}
                   >
-                    {activity.completed
-                      ? '✓ Completed'
-                      : 'In Progress'}
-                  </span>
+                    <span
+                      style={{
+                        color: activity.completed
+                          ? 'var(--success)'
+                          : 'var(--warning)',
+                      }}
+                    >
+                      {activity.completed
+                        ? '✓ Completed'
+                        : 'In Progress'}
+                    </span>
+
+                    {!activity.completed && (
+                      <button
+                      onClick={() =>
+                        navigate('/student/practice', {
+                          state: {
+                            resumeSessionId: activity.session_id,
+                          },
+                        })
+                      }
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '7px',
+                        padding: '8px 16px',
+                        background: 'var(--primary)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <span>↻</span>
+                      Resume
+                    </button>
+                    )}
+                  </div>
                 </div>
               ))
             )}
