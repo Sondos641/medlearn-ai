@@ -248,7 +248,8 @@ You must return one result for EVERY rubric criterion.
             }
         ],
         temperature=0.1,
-        max_tokens=6000
+        max_tokens=7000,
+        response_format={"type": "json_object"}
     )
 
     raw_response = response.choices[0].message.content
