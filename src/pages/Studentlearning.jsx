@@ -12,6 +12,7 @@ const StudentLearning = () => {
 
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [sessionId, setSessionId] = useState(null);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [translatingMessageId, setTranslatingMessageId] = useState(null);
@@ -85,6 +86,8 @@ const StudentLearning = () => {
         },
         body: JSON.stringify({
           message: message,
+          user_id: user?.id,
+          session_id: sessionId,
         }),
       });
 
@@ -93,6 +96,9 @@ const StudentLearning = () => {
       }
 
       const data = await response.json();
+      if (data.session_id) {
+        setSessionId(data.session_id);
+      }
 
       const aiResponse = {
         id: Date.now() + 1,

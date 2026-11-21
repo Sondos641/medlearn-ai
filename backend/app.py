@@ -8,7 +8,14 @@ import uuid
 from virtual_patient import get_patient_response
 from physical_assessment import perform_assessment
 from evaluator import evaluate_session
-from database import init_db, save_session, load_sessions, DB_PATH
+from database import (
+    init_db,
+    save_session,
+    load_sessions,
+    DB_PATH,
+    create_learning_session,
+    update_learning_session,
+)
 import sqlite3
 import json
 
@@ -72,6 +79,13 @@ def chat():
         if not user_message:
             return jsonify({"error": "No message provided"}), 400
 
+        user_id = data.get("user_id")
+        session_id = data.get("session_id") or str(uuid.uuid4())
+
+        if user_id:
+            create_learning_session(session_id, user_id)
+            update_learning_session(session_id)
+
         system_prompt = """
 You are a nursing educator for the Physical Assessment & Health History course.
 
@@ -103,7 +117,8 @@ Do not invent medical facts.
         answer = response.choices[0].message.content
 
         return jsonify({
-            "reply": answer
+            "reply": answer,
+            "session_id": session_id
         })
 
     except Exception as e:
@@ -650,6 +665,69 @@ def student_activity(user_id):
     except Exception as e:
         print("STUDENT ACTIVITY ERROR:", str(e))
         return jsonify({"error": str(e)}), 500
+
+# ============================================================
+# STUDENT DASHBOARD - STATISTICS
+# ============================================================
+
+@app.route("/student/<user_id>/stats", methods=["GET"])
+def student_stats(user_id):
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+
+            learning = conn.execute("""
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(
+                        CASE
+                            WHEN created_at >= date(
+                                'now',
+                                '-' || (
+                                    (CAST(strftime('%w', 'now') AS INTEGER) + 6) % 7
+                                ) || ' days'
+                            )
+                            THEN 1 ELSE 0
+                        END
+                    ) AS this_week
+                FROM learning_sessions
+                WHERE user_id = ?
+            """, (user_id,)).fetchone()
+
+            practice = conn.execute("""
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(
+                        CASE
+                            WHEN created_at >= date(
+                                'now',
+                                '-' || (
+                                    (CAST(strftime('%w', 'now') AS INTEGER) + 6) % 7
+                                ) || ' days'
+                            )
+                            THEN 1 ELSE 0
+                        END
+                    ) AS this_week
+                FROM practice_sessions
+                WHERE user_id = ?
+                AND json_extract(session_data, '$.evaluation') IS NOT NULL
+            """, (user_id,)).fetchone()
+
+        return jsonify({
+            "success": True,
+            "learning_sessions": {
+                "total": learning["total"] or 0,
+                "this_week": learning["this_week"] or 0,
+            },
+            "practice_completed": {
+                "total": practice["total"] or 0,
+                "this_week": practice["this_week"] or 0,
+            },
+        })
+
+    except Exception as e:
+        print("STUDENT STATS ERROR:", str(e))
+        return jsonify({"error": str(e)}), 500    
 
 
     

@@ -19,6 +19,16 @@ def init_db():
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS learning_sessions (
+                session_id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                message_count INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
 
         # Add user_id to existing databases if it does not exist
         columns = [
@@ -66,3 +76,23 @@ def load_sessions():
         session_id: json.loads(session_data)
         for session_id, session_data in rows
     }
+
+def create_learning_session(session_id, user_id):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            INSERT OR IGNORE INTO learning_sessions (session_id, user_id)
+            VALUES (?, ?)
+        """, (session_id, user_id)) 
+
+
+def update_learning_session(session_id):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            UPDATE learning_sessions
+            SET message_count = message_count + 1,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE session_id = ?
+        """, (session_id,))
+
+
+    

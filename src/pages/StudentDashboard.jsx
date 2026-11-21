@@ -10,6 +10,10 @@ const StudentDashboard = () => {
   const [activities, setActivities] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
   const [activityError, setActivityError] = useState('');
+  const [stats, setStats] = useState({
+    learning_sessions: { total: 0, this_week: 0 },
+    practice_completed: { total: 0, this_week: 0 },
+  });
 
 
   useEffect(() => {
@@ -52,6 +56,34 @@ const StudentDashboard = () => {
   
       fetchActivities();
     }, [user?.id]);
+    // Fetch dashboard statistics
+useEffect(() => {
+  if (!user?.id) return;
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:5000/student/${user.id}/stats`
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to load statistics');
+      }
+
+      setStats({
+        learning_sessions: data.learning_sessions,
+        practice_completed: data.practice_completed,
+      });
+
+    } catch (error) {
+      console.error('Stats fetch error:', error);
+    }
+  };
+
+  fetchStats();
+}, [user?.id]);
 
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
@@ -69,14 +101,14 @@ const StudentDashboard = () => {
   const statsCards = [
     {
       title: 'Learning Sessions',
-      value: '12',
-      change: '+3 this week',
+      value: stats.learning_sessions.total,
+     change: `+${stats.learning_sessions.this_week} this week`,
       icon: '📚',
     },
     {
       title: 'Practice Completed',
-      value: '8',
-      change: '+2 this week',
+      value: stats.practice_completed.total,
+      change: `+${stats.practice_completed.this_week} this week`,
       icon: '🎯',
     },
     {
