@@ -37,6 +37,7 @@ SCENARIOS = {
         "exertional chest discomfort",
         "fainting episode",
     ],
+
     "respiratory": [
         "persistent cough",
         "wheezing and shortness of breath",
@@ -44,6 +45,7 @@ SCENARIOS = {
         "breathing difficulty during exercise",
         "chest tightness with respiratory symptoms",
     ],
+
     "neurological": [
         "recurrent headaches",
         "migraine-like symptoms",
@@ -52,6 +54,7 @@ SCENARIOS = {
         "sudden weakness and speech difficulty",
         "seizure-like episode",
     ],
+
     "abdominal": [
         "upper abdominal pain",
         "lower abdominal pain",
@@ -60,6 +63,7 @@ SCENARIOS = {
         "diarrhea and dehydration symptoms",
         "pain after eating",
     ],
+
     "musculoskeletal": [
         "lower back pain",
         "knee pain after physical activity",
@@ -68,6 +72,7 @@ SCENARIOS = {
         "ankle injury",
         "wrist pain and swelling",
     ],
+
     "heent": [
         "ear pain",
         "nasal congestion and facial pressure",
@@ -75,6 +80,7 @@ SCENARIOS = {
         "neck swelling",
         "recurrent sinus symptoms",
     ],
+
     "femt": [
         "blurred vision",
         "eye redness and discomfort",
@@ -94,6 +100,7 @@ SYSTEM_ALIASES = {
     "msk": "musculoskeletal",
 }
 
+
 SYSTEM_CODES = {
     "cardiovascular": "CVS",
     "respiratory": "RESP",
@@ -104,8 +111,10 @@ SYSTEM_CODES = {
     "femt": "FEMT",
 }
 
+
 # Track recent choices within the current server process.
 RECENT_SCENARIOS = deque(maxlen=8)
+
 
 AGE_GROUPS = {
     "child": (6, 12),
@@ -114,6 +123,7 @@ AGE_GROUPS = {
     "adult": (36, 59),
     "older_adult": (60, 85),
 }
+
 
 # Initial rollout: adult cases only until pediatric
 # assessment actions and rubrics have been reviewed.
@@ -124,7 +134,35 @@ ENABLED_AGE_GROUPS = [
 ]
 
 
+# ---------------------------------------------------------
+# REQUIRED CARDIOVASCULAR ASSESSMENT ACTIONS
+# ---------------------------------------------------------
+
+CARDIOVASCULAR_REQUIRED_ACTIONS = [
+    "inspect_precordium",
+    "palpate_apex",
+    "check_lv_heave",
+    "check_thrills",
+    "auscultate_heart_diaphragm",
+    "auscultate_apex_bell",
+    "assess_jvp",
+    "auscultate_carotids",
+    "inspect_upper_extremities",
+    "palpate_upper_pulses",
+    "inspect_lower_extremities",
+    "palpate_lower_pulses",
+    "grade_edema",
+    "capillary_refill_upper",
+    "capillary_refill_lower",
+]
+
+
+# ---------------------------------------------------------
+# CHOOSE SCENARIO
+# ---------------------------------------------------------
+
 def choose_scenario(system):
+
     options = SCENARIOS[system]
 
     available = [
@@ -149,7 +187,82 @@ def choose_scenario(system):
     }
 
 
-def generate_case(system="cardiovascular", difficulty="moderate"):
+# ---------------------------------------------------------
+# VALIDATE CARDIOVASCULAR ASSESSMENT FINDINGS
+# ---------------------------------------------------------
+
+def validate_cardiovascular_findings(case):
+
+    hidden_case = case.get("hidden_case", {})
+
+    physical_findings = hidden_case.get(
+        "physical_findings", {}
+    )
+
+    if not isinstance(physical_findings, dict):
+        print("Invalid physical_findings structure.")
+        return False
+
+    action_findings = physical_findings.get(
+        "action_findings"
+    )
+
+    if not isinstance(action_findings, dict):
+        print("Missing action_findings dictionary.")
+        return False
+
+    missing_actions = [
+        action
+        for action in CARDIOVASCULAR_REQUIRED_ACTIONS
+        if not isinstance(action_findings.get(action), str)
+        or not action_findings[action].strip()
+    ]
+
+    if missing_actions:
+        print(
+            "Missing assessment findings:",
+            missing_actions
+        )
+        return False
+
+    # Reject obvious placeholder responses.
+    invalid_phrases = [
+        "no specific finding available",
+        "no finding available",
+        "assessment performed, but no specific",
+        "not provided",
+        "not specified",
+        "not assessed",
+        "not examined",
+        "unknown",
+        "n/a",
+    ]
+
+    for action in CARDIOVASCULAR_REQUIRED_ACTIONS:
+
+        finding = action_findings[action].strip()
+
+        if any(
+            phrase in finding.lower()
+            for phrase in invalid_phrases
+        ):
+            print(
+                "Invalid placeholder for action:",
+                action
+            )
+            return False
+
+    return True
+
+
+# ---------------------------------------------------------
+# GENERATE CASE
+# ---------------------------------------------------------
+
+def generate_case(
+    system="cardiovascular",
+    difficulty="moderate"
+):
 
     system = SYSTEM_ALIASES.get(
         system.lower().strip(),
@@ -157,11 +270,18 @@ def generate_case(system="cardiovascular", difficulty="moderate"):
     )
 
     if system not in SCENARIOS:
-        raise ValueError(f"Unsupported body system: {system}")
+        raise ValueError(
+            f"Unsupported body system: {system}"
+        )
 
     difficulty = difficulty.lower().strip()
 
-    if difficulty not in ["easy", "medium", "moderate", "hard"]:
+    if difficulty not in [
+        "easy",
+        "medium",
+        "moderate",
+        "hard"
+    ]:
         raise ValueError("Unsupported difficulty")
 
     if difficulty == "moderate":
@@ -179,7 +299,9 @@ def generate_case(system="cardiovascular", difficulty="moderate"):
 
     textbook_query = f"""
     {system} nursing health assessment.
+
     Patient presenting with {plan['condition']}.
+
     Relevant health history, symptoms, risk factors,
     physical examination, normal and abnormal findings,
     differential considerations and referral indicators.
@@ -190,9 +312,14 @@ def generate_case(system="cardiovascular", difficulty="moderate"):
         n_results=3
     )
 
+    if not textbook_context:
+        raise ValueError(
+            "No textbook context was retrieved for this case."
+        )
+
     textbook_context = str(textbook_context)[:6000]
 
-    if not textbook_context or not str(textbook_context).strip():
+    if not textbook_context.strip():
         raise ValueError(
             "No textbook context was retrieved for this case."
         )
@@ -200,6 +327,41 @@ def generate_case(system="cardiovascular", difficulty="moderate"):
     # ---------------------------------------------------------
     # STEP 3: Build prompt
     # ---------------------------------------------------------
+
+    cardiovascular_instructions = ""
+
+    if system == "cardiovascular":
+
+        required_actions_text = "\n".join(
+            f"- {action}"
+            for action in CARDIOVASCULAR_REQUIRED_ACTIONS
+        )
+
+        cardiovascular_instructions = f"""
+CARDIOVASCULAR PHYSICAL ASSESSMENT RULES:
+
+Fill hidden_case.physical_findings.action_findings.
+
+Provide a specific finding for EVERY action listed below.
+Use these exact JSON keys:
+
+{required_actions_text}
+
+RULES:
+- Each action must have a non-empty descriptive string.
+- Findings must be appropriate for the patient's case.
+- Findings must agree with the history and vital signs.
+- Do not contradict other examination findings.
+- Do not invent unsupported abnormal findings.
+- Do not use generic placeholders.
+- Do not use "not examined" as a finding.
+- Keep each finding concise.
+- Keep all action findings inside hidden_case.
+- Do not reveal examination findings in student_view.
+
+The broad examination categories and action_findings
+must describe the same underlying patient consistently.
+"""
 
     prompt = f"""
 You are generating a fictional clinical simulation case
@@ -256,6 +418,8 @@ The case must support:
 3. Identification of clinical problems
 4. Referral or management decision
 
+{cardiovascular_instructions}
+
 Return ONLY valid JSON.
 No Markdown or code fences.
 
@@ -264,10 +428,15 @@ Use this JSON structure:
 """
 
     # ---------------------------------------------------------
-    # STEP 4: Generate and check the case
+    # STEP 4: Generate and validate the case
     # ---------------------------------------------------------
 
     for attempt in range(2):
+
+        print(
+            f"Generating case - attempt {attempt + 1}/2"
+        )
+
         response = client.chat.completions.create(
             model="openai/gpt-oss-20b",
             messages=[
@@ -292,22 +461,30 @@ Use this JSON structure:
 
         try:
             case = json.loads(raw_response)
+
         except (json.JSONDecodeError, TypeError):
             print("Invalid JSON. Retrying...")
             continue
 
         if not isinstance(case, dict):
+            print("Case is not a dictionary. Retrying...")
             continue
 
         student_view = case.get("student_view")
 
         if not isinstance(student_view, dict):
+            print("Missing student_view. Retrying...")
             continue
 
-        # Check key demographic constraints.
+        # Validate demographic constraints.
+
         try:
-            generated_age = int(student_view.get("age"))
+            generated_age = int(
+                student_view.get("age")
+            )
+
         except (ValueError, TypeError):
+            print("Invalid patient age. Retrying...")
             continue
 
         generated_sex = str(
@@ -315,21 +492,46 @@ Use this JSON structure:
         ).lower().strip()
 
         if generated_age != plan["age"]:
+            print("Patient age mismatch. Retrying...")
             continue
 
         if generated_sex != plan["sex"]:
+            print("Patient sex mismatch. Retrying...")
             continue
 
         # Verify basic required sections.
-        if not isinstance(case.get("hidden_case"), dict):
+
+        if not isinstance(
+            case.get("hidden_case"),
+            dict
+        ):
+            print("Missing hidden_case. Retrying...")
             continue
+
+        # Validate cardiovascular action findings.
+
+        if system == "cardiovascular":
+
+            if not validate_cardiovascular_findings(case):
+                print(
+                    "Incomplete cardiovascular findings. "
+                    "Retrying..."
+                )
+                continue
+
+        # -----------------------------------------------------
+        # CASE ACCEPTED
+        # -----------------------------------------------------
 
         case["case_id"] = (
             f"{SYSTEM_CODES[system]}-"
             f"{uuid.uuid4().hex[:8].upper()}"
         )
+
         case["system"] = system
         case["difficulty"] = difficulty
+
+        print("Case generated successfully.")
 
         return case
 
@@ -338,25 +540,52 @@ Use this JSON structure:
 
 
 # ---------------------------------------------------------
-# TEST
+# TERMINAL TEST
 # ---------------------------------------------------------
 
 if __name__ == "__main__":
 
-    for i in range(3):
+    for i in range(1):
+
         case = generate_case(
             system="cardiovascular",
             difficulty="medium"
         )
 
         if case:
+
             patient = case["student_view"]
 
             print(f"\nCASE {i + 1}")
-            print("Name:", patient.get("patient_name"))
-            print("Age:", patient.get("age"))
-            print("Sex:", patient.get("sex"))
+            print(
+                "Name:",
+                patient.get("patient_name")
+            )
+            print(
+                "Age:",
+                patient.get("age")
+            )
+            print(
+                "Sex:",
+                patient.get("sex")
+            )
             print(
                 "Complaint:",
                 patient.get("chief_complaint")
+            )
+
+            action_findings = (
+                case["hidden_case"]
+                ["physical_findings"]
+                ["action_findings"]
+            )
+
+            print(
+                "Assessment findings:",
+                len(action_findings)
+            )
+
+        else:
+            print(
+                f"CASE {i + 1}: Generation failed."
             )

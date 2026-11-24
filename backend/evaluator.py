@@ -62,23 +62,24 @@ def flatten_rubric(rubric):
 
     return criteria
 
+
 def calculate_score(criteria):
     """
-    Calculate the final score from rubric criteria.
-    Each criterion must contain:
-    - score
-    - max_score
+    Calculate a normalized score out of 100.
+
+    Criteria marked not_applicable are excluded from
+    the available marks.
     """
 
     earned_points = 0
     maximum_points = 0
 
     for criterion in criteria:
-        score = criterion.get("score", 0)
-        max_score = criterion.get("max_score", 0)
+        if criterion.get("not_applicable", False):
+            continue
 
-        earned_points += score
-        maximum_points += max_score
+        earned_points += criterion.get("score", 0)
+        maximum_points += criterion.get("max_score", 0)
 
     if maximum_points == 0:
         return 0
@@ -86,6 +87,7 @@ def calculate_score(criteria):
     percentage = (earned_points / maximum_points) * 100
 
     return round(percentage, 1)
+
 
 
 def build_session_evidence(session):
@@ -116,7 +118,7 @@ def evaluate_session(session):
 
     Python calculates the final score.
     """
-
+    print("DEBUG: UPDATED EVALUATOR IS RUNNING", flush=True)
     # --------------------------------------------------------
     # 1. Load rubric
     # --------------------------------------------------------
@@ -150,6 +152,35 @@ def evaluate_session(session):
     # --------------------------------------------------------
 
     system_prompt = """
+
+FOCUSED CLINICAL ASSESSMENT SAFETY RULES:
+
+1. Decide whether each criterion is clinically applicable
+   BEFORE considering the student's performance.
+
+2. Never mark a criterion N/A just because the student
+   did not perform it.
+
+3. Essential patient-safety assessments must remain
+   applicable, even if the student skipped them.
+
+4. A normal examination finding does not automatically
+   make its assessment unnecessary.
+
+5. Do not require students to identify abnormalities
+   that are absent from the hidden patient case.
+
+6. If the simulator does not provide a way to demonstrate
+   a specific technique, that technique must not be
+   penalized as missing.
+
+7. Interview, documentation, clinical reasoning, and
+   referral criteria should remain applicable whenever
+   the case provides an opportunity to demonstrate them.
+
+8. When marking a criterion N/A, explain the specific
+   clinical or interface-related reason.
+
 You are the clinical assessment evaluator for MedLearn AI.
 
 Your job is to evaluate a nursing student's completed clinical
@@ -159,10 +190,34 @@ IMPORTANT SCORING RULES:
 
 1. Evaluate EVERY rubric criterion separately.
 
-2. Each criterion must receive ONLY:
-   0 = Not done
-   1 = Partially performed
-   2 = Performed correctly
+
+2. Each criterion must receive one of these scores:
+   0 = Applicable but not performed or incorrect
+   1 = Applicable and partially performed
+   2 = Applicable and correctly performed
+
+   Also return a boolean field named "not_applicable"
+   for every criterion.
+
+   Set "not_applicable": true ONLY when:
+   - The assessment is not clinically indicated for
+     this specific patient and is not required for safety.
+   - OR the criterion requires an interaction that the
+     simulator does not allow the student to demonstrate.
+
+   Set "not_applicable": false for all other criteria.
+
+   IMPORTANT:
+   - Never mark an essential assessment as not applicable
+     simply because the student skipped it.
+   - Base clinical relevance on the hidden case, not on
+     which actions the student chose to perform.
+   - Normal findings can be clinically important.
+   - An assessment is not automatically unnecessary
+     just because its expected result is normal.
+   - When not_applicable is true, return score 0 and
+     explain why the criterion does not apply.
+
 
 3. Give credit ONLY for actions that are supported by the
    recorded student evidence.
@@ -203,13 +258,15 @@ Return ONLY valid JSON.
 
 The response must have this exact structure:
 
+
 {
     "criteria": [
         {
             "id": 1,
             "score": 0,
+            "not_applicable": false,
             "evidence": "Specific evidence from the student session, or No evidence",
-            "reason": "Short explanation for the score"
+            "reason": "Explain the score or why this criterion is not applicable"
         }
     ],
     "did_well": [],
@@ -233,25 +290,25 @@ You must return one result for EVERY rubric criterion.
     # --------------------------------------------------------
 
     response = client.chat.completions.create(
-        model="openai/gpt-oss-20b",
-        messages=[
-            {
-                "role": "system",
-                "content": system_prompt
-            },
-            {
-                "role": "user",
-                "content": json.dumps(
-                    evaluation_data,
-                    indent=2
-                )
-            }
-        ],
-        temperature=0.1,
-        max_tokens=7000,
-        response_format={"type": "json_object"}
-    )
-
+            model="openai/gpt-oss-20b",
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        evaluation_data,
+                        indent=2
+                    )
+                }
+            ],
+            temperature=0.1,
+            max_tokens=7000,
+            response_format={"type": "json_object"}
+        )
+    
     raw_response = response.choices[0].message.content
 
     if not raw_response:
@@ -325,6 +382,20 @@ You must return one result for EVERY rubric criterion.
         criterion_id = result.get("id")
         score = result.get("score")
 
+
+        not_applicable = result.get("not_applicable", False)
+
+        if not isinstance(not_applicable, bool):
+            raise ValueError(
+                f"Invalid not_applicable value for criterion {criterion_id}"
+            )
+
+        if not_applicable and score != 0:
+            raise ValueError(
+                f"Criterion {criterion_id} is N/A but has a nonzero score."
+            )
+
+
         if score not in [0, 1, 2]:
             raise ValueError(
                 f"Invalid score for criterion "
@@ -335,11 +406,44 @@ You must return one result for EVERY rubric criterion.
             criterion_id
         ]
 
+
+        protected_sections = {
+            "Interview and History",
+            "Student Report and Documentation",
+            "Referral Decision",
+        }
+
+        if official_criterion["section"] in protected_sections:
+            not_applicable = False
+
+        # These skills cannot currently be demonstrated
+        # through the available Practice assessment actions.
+        interface_unsupported_criteria = {16,24,31}
+
+        if criterion_id in interface_unsupported_criteria:
+            not_applicable = True
+            score = 0
+
+        # Core cardiovascular assessments remain applicable.
+        # Missing an essential action must not become N/A.
+        essential_cardiovascular_criteria = {
+            21,  # Heart auscultation with diaphragm
+            26,  # Upper extremity pulses
+        }
+
+        if (
+            system == "cardiovascular"
+            and criterion_id in essential_cardiovascular_criteria
+        ):
+            not_applicable = False
+
+
         validated_criteria.append({
             "id": criterion_id,
             "section": official_criterion["section"],
             "criterion": official_criterion["criterion"],
             "score": score,
+            "not_applicable": not_applicable,
             "max_score": official_criterion["max_score"],
             "evidence": result.get(
                 "evidence",
@@ -351,6 +455,7 @@ You must return one result for EVERY rubric criterion.
             )
         })
 
+    
     def map_feedback_items(items):
         mapped_items = []
 
@@ -372,6 +477,24 @@ You must return one result for EVERY rubric criterion.
 
         return mapped_items
 
+    # Build feedback from Python-validated scores,
+    # not from the AI's potentially inconsistent lists.
+    did_well = []
+    missed = []
+    partially_completed = []
+    not_applicable_items = []
+
+    for item in validated_criteria:
+        if item["not_applicable"]:
+            not_applicable_items.append(item["criterion"])
+        elif item["score"] == item["max_score"]:
+            did_well.append(item["criterion"])
+        elif item["score"] == 0:
+            missed.append(item["criterion"])
+        else:
+            partially_completed.append(item["criterion"])
+
+
 
 
 
@@ -381,6 +504,12 @@ You must return one result for EVERY rubric criterion.
 
     final_score = calculate_score(
         validated_criteria
+    )
+
+    print(
+        "DEBUG N/A IDs:",
+        [item["id"] for item in validated_criteria if item["not_applicable"]],
+        flush=True
     )
 
 
@@ -393,23 +522,17 @@ You must return one result for EVERY rubric criterion.
         "total_marks": rubric["total_marks"],
         "criteria": validated_criteria,
         "feedback": {
-            "did_well": map_feedback_items(
-                evaluation.get("did_well", [])
-            ),
-            "missed": map_feedback_items(
-                evaluation.get("missed", [])
-            ),
-            "partially_completed": map_feedback_items(
-                evaluation.get("partially_completed", [])
-            ),
+            "did_well": did_well,
+            "missed": missed,
+            "partially_completed": partially_completed,
+            "not_applicable": not_applicable_items,
             "focus_topics": map_feedback_items(
                 evaluation.get("focus_topics", [])
             ),
             "report_feedback": evaluation.get(
-                "report_feedback",
-                ""
+                "report_feedback", ""
             )
-        }
+    }
     }
 
     return final_evaluation

@@ -104,37 +104,37 @@
         },
         {
           "id": 18,
-          "criterion": "Palpates apex beat using correct landmark technique",
+          "criterion": "Selects apex beat palpation when clinically indicated and correctly documents or interprets the resulting findings",
           "max_score": 2
         },
         {
           "id": 19,
-          "criterion": "Identifies displaced apex beat and LV heave correctly",
+          "criterion": "Correctly assesses and interprets apex beat location and left ventricular heave, recognizing normal or abnormal findings when clinically relevant",
           "max_score": 2
         },
         {
           "id": 20,
-          "criterion": "Checks for thrills across valve areas",
+          "criterion": "Selects assessment for cardiac thrills when clinically indicated and correctly documents or interprets their presence or absence",
           "max_score": 2
         },
         {
           "id": 21,
-          "criterion": "Auscultates with diaphragm — all 5 areas — identifies HR, rhythm, S1/S2",
+          "criterion": "Selects cardiac auscultation with the diaphragm and correctly documents or interprets the resulting heart sounds and rhythm findings",
           "max_score": 2
         },
         {
           "id": 22,
-          "criterion": "Auscultates with bell — identifies S3 gallop at apex",
+          "criterion": "Performs appropriate cardiac auscultation with the bell and correctly identifies the presence or absence of additional heart sounds, including S3 when present",
           "max_score": 2
         },
         {
           "id": 23,
-          "criterion": "Assesses JVP correctly at 45 degrees — measures height above sternal angle",
+          "criterion": "Selects carotid auscultation when clinically indicated and correctly documents or interprets the resulting findings, including the presence or absence of bruits",
           "max_score": 2
         },
         {
           "id": 24,
-          "criterion": "Auscultates carotids with bell (breath held) bilaterally",
+          "criterion": "Correctly documents or interprets carotid auscultation findings when the assessment is clinically indicated, without requiring unverified technique details",
           "max_score": 2
         },
         {
@@ -144,22 +144,22 @@
         },
         {
           "id": 26,
-          "criterion": "Palpates upper pulses bilaterally — grades correctly",
+          "criterion": "Selects upper extremity pulse assessment when clinically appropriate and correctly documents or interprets the resulting pulse findings",
           "max_score": 2
         },
         {
           "id": 27,
-          "criterion": "Inspects lower extremities: oedema, skin changes",
+          "criterion": "Selects lower extremity inspection when clinically indicated and correctly documents or interprets the resulting findings, including skin changes, swelling, or other visible abnormalities when present",
           "max_score": 2
         },
         {
           "id": 28,
-          "criterion": "Palpates lower pulses bilaterally — all four vessels",
+          "criterion": "Selects lower extremity pulse assessment when clinically indicated and correctly documents or interprets the resulting pulse findings",
           "max_score": 2
         },
         {
           "id": 29,
-          "criterion": "Grades oedema correctly (+1 to +4, bilateral comparison)",
+          "criterion": "Selects peripheral oedema assessment when clinically indicated and correctly documents or interprets its absence or severity when present",
           "max_score": 2
         },
         {
@@ -184,12 +184,12 @@
         },
         {
           "id": 34,
-          "criterion": "Identifies elevated JVP and links to heart failure",
+          "criterion": "Correctly interprets JVP findings as normal or elevated and explains their clinical significance when relevant to the patient's presentation",
           "max_score": 2
         },
         {
           "id": 35,
-          "criterion": "Identifies S3 gallop and links to heart failure",
+          "criterion": "Correctly interprets cardiac auscultation findings and explains their clinical significance when relevant, without assuming abnormal heart sounds are present",
           "max_score": 2
         }
       ]
@@ -256,27 +256,27 @@
       "criteria": [
         {
           "id": 46,
-          "criterion": "Correctly identifies need for urgent referral",
+          "criterion": "Correctly determines whether referral is required and selects an appropriate urgency level based on the patient's symptoms, examination findings, and clinical risk",
           "max_score": 2
         },
         {
           "id": 47,
-          "criterion": "States correct referral destination",
+          "criterion": "Selects an appropriate referral destination or explains why referral is not required, based on the patient's clinical condition and level of urgency",
           "max_score": 2
         },
         {
           "id": 48,
-          "criterion": "States correct urgency",
+          "criterion": "Correctly determines and documents the appropriate urgency level, including emergency, urgent, routine, or no immediate referral, based on the patient's clinical presentation",
           "max_score": 2
         },
         {
           "id": 49,
-          "criterion": "Identifies correct immediate actions before referral",
+          "criterion": "Identifies appropriate immediate nursing actions based on the patient's clinical condition, including patient safety, monitoring, escalation when indicated, and actions required before referral if applicable",
           "max_score": 2
         },
         {
           "id": 50,
-          "criterion": "Complete clinically appropriate referral justification",
+          "criterion": "Provides a clinically appropriate justification for the referral or non-referral decision, supported by the patient's symptoms, assessment findings, risk factors, and relevant clinical evidence",
           "max_score": 2
         }
       ]

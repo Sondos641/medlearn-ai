@@ -398,11 +398,22 @@ def perform_assessment(case_data, action):
         .get("physical_findings", {})
     )
 
-    finding = _find_relevant_finding(
-        physical_findings,
-        action_info
-    )
+        # Get the specific finding for this assessment action.
+    action_findings = physical_findings.get("action_findings", {})
 
+    if (
+        isinstance(action_findings, dict)
+        and action_info["action"] in action_findings
+    ):
+        finding = action_findings[action_info["action"]]
+    else:
+        # Support older cases that don't have action_findings.
+        finding = _find_relevant_finding(
+            physical_findings,
+            action_info
+        )
+
+    # Return the result for BOTH cases.
     return {
         "success": True,
         "action": action_info["action"],

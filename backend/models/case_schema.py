@@ -51,7 +51,9 @@ CASE_SCHEMA = {
             "inspection": [],
             "palpation": [],
             "percussion": [],
-            "auscultation": []
+            "auscultation": [],
+            # Findings for specific physical assessment actions
+            "action_findings": {}
         },
 
         "expected_problems": [],

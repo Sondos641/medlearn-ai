@@ -518,16 +518,15 @@ def practice_assessment(session_id):
             "success": True,
             "assessment": assessment_record
         })
-
     except Exception as e:
+        import traceback
 
         print("\n❌ PHYSICAL ASSESSMENT ERROR:")
-        print(str(e))
+        traceback.print_exc()
 
         return jsonify({
             "error": str(e)
         }), 500
-
 # ============================================================
 # PRACTICE - SUBMIT REPORT AND EVALUATE
 # ============================================================
@@ -599,6 +598,19 @@ def practice_submit(session_id):
         print("======================================")
 
         evaluation = evaluate_session(evaluation_session)
+        print("\n===== GRADING DEBUG =====", flush=True)
+        print("Score:", evaluation.get("score"), flush=True)
+
+        for item in evaluation.get("criteria", []):
+            if item.get("not_applicable"):
+                print(
+                    "N/A criterion:",
+                    item["id"],
+                    item["criterion"],
+                    flush=True
+                )
+
+        print("=========================\n", flush=True)
 
         if not evaluation:
             return jsonify({
