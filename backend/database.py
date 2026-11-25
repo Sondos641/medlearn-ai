@@ -1,7 +1,9 @@
 
 import sqlite3
 import json
+import uuid
 from pathlib import Path
+from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = Path(__file__).resolve().parent / "data" / "medlearn.db"
 
@@ -10,6 +12,28 @@ def init_db():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'student',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+                # Add faculty_id to existing users table if it does not exist
+        user_columns = [
+            row[1]
+            for row in conn.execute(
+                "PRAGMA table_info(users)"
+            ).fetchall()
+        ]
+
+        if "faculty_id" not in user_columns:
+            conn.execute(
+                "ALTER TABLE users ADD COLUMN faculty_id TEXT"
+            )
         conn.execute("""
             CREATE TABLE IF NOT EXISTS practice_sessions (
                 session_id TEXT PRIMARY KEY,
@@ -94,5 +118,36 @@ def update_learning_session(session_id):
             WHERE session_id = ?
         """, (session_id,))
 
+def register_user(name, email, password):
+    user_id = str(uuid.uuid4())
+    password_hash = generate_password_hash(password)
 
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            INSERT INTO users (id, name, email, password_hash, role)
+            VALUES (?, ?, ?, ?, ?)
+        """, (user_id, name, email, password_hash, "student"))
+
+    return {
+        "id": user_id,
+        "name": name,
+        "email": email,
+        "role": "student"
+    }
+
+
+def get_user_by_email(email):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+
+        user = conn.execute("""
+            SELECT * FROM users
+            WHERE email = ?
+        """, (email,)).fetchone()
+
+    return dict(user) if user else None
+
+
+def verify_password(password, password_hash):
+    return check_password_hash(password_hash, password)
     

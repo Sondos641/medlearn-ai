@@ -15,6 +15,8 @@ from database import (
     DB_PATH,
     create_learning_session,
     update_learning_session,
+    get_user_by_email,
+    verify_password,
 )
 import sqlite3
 import json
@@ -61,6 +63,50 @@ practice_sessions = load_sessions()
 def home():
     return "MedLearn AI API is running! 🚀"
 
+# ============================================================
+# STUDENT LOGIN
+# ============================================================
+
+@app.route("/auth/login", methods=["POST"])
+def login():
+    try:
+        data = request.get_json() or {}
+
+        email = data.get("email", "").strip().lower()
+        password = data.get("password", "")
+
+        if not email or not password:
+            return jsonify({
+                "success": False,
+                "error": "Please enter your email and password."
+            }), 400
+
+        # Check whether the student exists in the authorized dataset
+        user = get_user_by_email(email)
+
+        if not user or not verify_password(password, user["password_hash"]):
+            return jsonify({
+                "success": False,
+                "error": "Invalid email or password."
+            }), 401
+
+        return jsonify({
+            "success": True,
+            "user": {
+                "id": user["id"],
+                "name": user["name"],
+                "email": user["email"],
+                "role": user["role"]
+            }
+        }), 200
+
+    except Exception as e:
+        print("LOGIN ERROR:", str(e))
+
+        return jsonify({
+            "success": False,
+            "error": "Login failed. Please try again."
+        }), 500
 
 # ============================================================
 # LEARNING CHAT
@@ -643,7 +689,7 @@ def student_activity(user_id):
             conn.row_factory = sqlite3.Row
 
             rows = conn.execute("""
-                SELECT session_id, session_data, created_at
+                SELECT session_id, session_data, created_at, updated_at
                 FROM practice_sessions
                 WHERE user_id = ?
                 ORDER BY created_at DESC
@@ -681,6 +727,155 @@ def student_activity(user_id):
 # ============================================================
 # STUDENT DASHBOARD - STATISTICS
 # ============================================================
+
+
+# ============================================================
+# FACULTY DASHBOARD - ASSIGNED STUDENTS AND THEIR WORK
+# ============================================================
+
+@app.route("/faculty/<faculty_id>/students", methods=["GET"])
+def faculty_students(faculty_id):
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+
+            # Verify that this account is a faculty member
+            faculty = conn.execute("""
+                SELECT id, name, email
+                FROM users
+                WHERE id = ? AND role = 'faculty'
+            """, (faculty_id,)).fetchone()
+
+            if not faculty:
+                return jsonify({
+                    "success": False,
+                    "error": "Faculty account not found."
+                }), 404
+
+            # Retrieve only students assigned to this instructor
+            student_rows = conn.execute("""
+                SELECT id, name, email
+                FROM users
+                WHERE faculty_id = ? AND role = 'student'
+                ORDER BY name
+            """, (faculty_id,)).fetchall()
+
+            students = []
+            total_practice = 0
+            total_learning = 0
+            all_scores = []
+
+            for student in student_rows:
+
+                # Retrieve this student's practice work
+                practice_rows = conn.execute("""
+    SELECT session_id, session_data, created_at, updated_at
+    FROM practice_sessions
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+""", (student["id"],)).fetchall()
+
+                # Retrieve this student's learning activity
+                learning_rows = conn.execute("""
+                    SELECT message_count, created_at, updated_at
+                    FROM learning_sessions
+                    WHERE user_id = ?
+                    ORDER BY updated_at DESC
+                """, (student["id"],)).fetchall()
+
+                practice_work = []
+                scores = []
+                completed_count = 0
+                last_active_dates = []
+
+                for row in practice_rows:
+                    session = json.loads(row["session_data"])
+
+                    case_data = session.get("case_data", {})
+                    student_view = case_data.get("student_view", {})
+                    evaluation = session.get("evaluation")
+                    score = evaluation.get("score") if evaluation else None
+
+                    if evaluation is not None:
+                        completed_count += 1
+
+                    if isinstance(score, (int, float)):
+                        scores.append(score)
+                        all_scores.append(score)
+
+                    last_active_dates.append(row["updated_at"])
+
+                    practice_work.append({
+                        "session_id": row["session_id"],
+                        "title": student_view.get(
+                            "chief_complaint",
+                            "Practice Session"
+                        ),
+                        "system": session.get("system"),
+                        "difficulty": session.get("difficulty"),
+                        "created_at": row["created_at"],
+                        "completed": evaluation is not None,
+                        "score": score,
+                        "student_report": session.get("student_report"),
+                        "evaluation": evaluation,
+                        "conversation_history": session.get(
+                            "conversation_history", []
+                        ),
+                        "assessment_history": session.get(
+                            "assessment_history", []
+                        )
+                    })
+
+                for row in learning_rows:
+                    last_active_dates.append(row["updated_at"])
+
+                total_practice += len(practice_rows)
+                total_learning += len(learning_rows)
+
+                students.append({
+                    "id": student["id"],
+                    "name": student["name"],
+                    "email": student["email"],
+                    "practice_sessions": len(practice_rows),
+                    "practice_completed": completed_count,
+                    "learning_sessions": len(learning_rows),
+                    "average_score": (
+                        round(sum(scores) / len(scores), 2)
+                        if scores else None
+                    ),
+                    "last_active": (
+                        max(last_active_dates)
+                        if last_active_dates else None
+                    ),
+                    "practice_work": practice_work
+                })
+
+            return jsonify({
+                "success": True,
+                "faculty": {
+                    "id": faculty["id"],
+                    "name": faculty["name"],
+                    "email": faculty["email"]
+                },
+                "summary": {
+                    "total_students": len(students),
+                    "total_practice_sessions": total_practice,
+                    "total_learning_sessions": total_learning,
+                    "average_score": (
+                        round(sum(all_scores) / len(all_scores), 2)
+                        if all_scores else None
+                    )
+                },
+                "students": students
+            }), 200
+
+    except Exception as e:
+        print("FACULTY STUDENTS ERROR:", str(e))
+        return jsonify({
+            "success": False,
+            "error": "Could not retrieve faculty student data."
+        }), 500
+
 
 @app.route("/student/<user_id>/stats", methods=["GET"])
 def student_stats(user_id):

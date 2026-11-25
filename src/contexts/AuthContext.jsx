@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const AuthContext = createContext();
@@ -12,7 +13,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const token = localStorage.getItem('token');
       const savedUser = localStorage.getItem('user');
-  
+
       if (token && savedUser) {
         setUser(JSON.parse(savedUser));
       }
@@ -27,49 +28,62 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password, role) => {
     setLoading(true);
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       if (!email || !password) {
-        throw new Error('Please enter email and password');
+        throw new Error('Please enter email and password.');
       }
-      
-       // Keep the same user ID for the same email
-       const normalizedEmail = email.trim().toLowerCase();
-       const name = normalizedEmail.split('@')[0];
 
-       const storageKey = `mock_user_id_${normalizedEmail}`;
+      const normalizedEmail = email.trim().toLowerCase();
 
-       const savedUser = localStorage.getItem('user');
-       const existingUser = savedUser ? JSON.parse(savedUser) : null;
+      let userData;
 
-       let userId = localStorage.getItem(storageKey);
+      // Student and faculty login using the database
+      if (role === 'student' || role === 'faculty') {
+        const response = await fetch('http://127.0.0.1:5000/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: normalizedEmail,
+            password: password,
+          }),
+        });
 
-if (!userId) {
-  userId =
-    existingUser?.email?.toLowerCase() === normalizedEmail
-      ? existingUser.id
-      : Math.random().toString(36).substr(2, 9);
+        const result = await response.json();
 
-  localStorage.setItem(storageKey, userId);
-}
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Invalid email or password.');
+        }
 
-const userData = {
-  id: userId,
-  email: normalizedEmail,
-  name: name,
-  role: role,
-};
-      
+        // Verify the account role
+        if (result.user.role !== role) {
+          throw new Error('This account is not authorized for this login type.');
+        }
+
+        userData = result.user;
+
+      } else {
+        throw new Error('Invalid login role.');
+      }
+
+      // Save login information
       const token = 'mock-jwt-token-' + Date.now();
-      
+
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
+
       setUser(userData);
-      
+
       return { success: true, user: userData };
+
     } catch (error) {
-      return { success: false, error: error.message };
+      return {
+        success: false,
+        error: error.message || 'Login failed.',
+      };
+
     } finally {
       setLoading(false);
     }
