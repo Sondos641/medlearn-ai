@@ -49,9 +49,38 @@ def init_db():
                 user_id TEXT NOT NULL,
                 message_count INTEGER DEFAULT 0,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                title TEXT DEFAULT 'New Conversation'
             )
         """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS learning_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (session_id)
+                    REFERENCES learning_sessions(session_id),
+                FOREIGN KEY (user_id)
+                    REFERENCES users(id)
+            )
+        """)
+
+         # Add title to existing learning sessions if it does not exist
+        columns = [
+            row[1]
+            for row in conn.execute(
+                "PRAGMA table_info(learning_sessions)"
+            ).fetchall()
+        ]
+
+        if "title" not in columns:
+            conn.execute(
+                "ALTER TABLE learning_sessions ADD COLUMN title TEXT DEFAULT 'New Conversation'"
+            )
 
 
         # Add user_id to existing databases if it does not exist
@@ -118,6 +147,15 @@ def update_learning_session(session_id):
             WHERE session_id = ?
         """, (session_id,))
 
+def update_learning_session_title(session_id, title):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            UPDATE learning_sessions
+            SET title = ?
+            WHERE session_id = ?
+              AND (title IS NULL OR title = 'New Conversation')
+        """, (title, session_id))       
+
 def register_user(name, email, password):
     user_id = str(uuid.uuid4())
     password_hash = generate_password_hash(password)
@@ -150,4 +188,42 @@ def get_user_by_email(email):
 
 def verify_password(password, password_hash):
     return check_password_hash(password_hash, password)
+
+def save_learning_message(session_id, user_id, role, content):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            INSERT INTO learning_messages (
+                session_id,
+                user_id,
+                role,
+                content
+            )
+            VALUES (?, ?, ?, ?)
+        """, (session_id, user_id, role, content))
+    
+def get_learning_sessions(user_id):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+
+        rows = conn.execute("""
+            SELECT session_id, title, message_count, created_at, updated_at
+            FROM learning_sessions
+            WHERE user_id = ?
+            ORDER BY updated_at DESC
+        """, (user_id,)).fetchall()
+
+    return [dict(row) for row in rows]
+ 
+def get_learning_messages(session_id, user_id):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+
+        rows = conn.execute("""
+            SELECT id, role, content, created_at
+            FROM learning_messages
+            WHERE session_id = ? AND user_id = ?
+            ORDER BY id ASC
+        """, (session_id, user_id)).fetchall()
+
+    return [dict(row) for row in rows]
     

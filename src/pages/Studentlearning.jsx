@@ -13,9 +13,12 @@ const StudentLearning = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [messages, setMessages] = useState([]);
   const [sessionId, setSessionId] = useState(null);
+  const [chatHistory, setChatHistory] = useState([]);
+  const [isChatSidebarOpen, setIsChatSidebarOpen] = useState(true);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [translatingMessageId, setTranslatingMessageId] = useState(null);
+  
 
   const [suggestedQuestions, setSuggestedQuestions] = useState([
     'What is the purpose of a health history interview?',
@@ -36,6 +39,67 @@ const StudentLearning = () => {
       document.documentElement.classList.add('dark');
     }
   }, []);
+
+  useEffect(() => {
+    const fetchChatHistory = async () => {
+      if (!user?.id) return;
+  
+      try {
+        const response = await fetch(
+          `http://127.0.0.1:5000/learning/sessions?user_id=${user.id}`
+        );
+  
+        if (!response.ok) {
+          throw new Error('Failed to load chat history');
+        }
+  
+        const data = await response.json();
+        setChatHistory(data.sessions || []);
+  
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+      }
+    };
+  
+    fetchChatHistory();
+  }, [user?.id]);
+
+
+  const handleOpenChat = async (id) => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:5000/learning/sessions/${id}/messages?user_id=${user.id}`
+      );
+  
+      if (!response.ok) {
+        throw new Error('Failed to load conversation');
+      }
+  
+      const data = await response.json();
+  
+      const loadedMessages = (data.messages || []).map((msg) => ({
+        id: msg.id,
+        type: msg.role === 'user' ? 'user' : 'ai',
+        content: msg.content,
+        timestamp: msg.created_at,
+      }));
+  
+      setMessages(loadedMessages);
+      setSessionId(id);
+  
+    } catch (error) {
+      console.error('Error opening conversation:', error);
+    }
+  };
+
+
+  const handleNewChat = () => {
+    setMessages([]);
+    setSessionId(null);
+    setInputMessage('');
+  };
+
+
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
@@ -98,6 +162,31 @@ const StudentLearning = () => {
       const data = await response.json();
       if (data.session_id) {
         setSessionId(data.session_id);
+      
+        setChatHistory((prev) => {
+          const existing = prev.find(
+            (chat) => chat.session_id === data.session_id
+          );
+      
+          if (existing) {
+            return prev.map((chat) =>
+              chat.session_id === data.session_id
+                ? { ...chat, updated_at: new Date().toISOString() }
+                : chat
+            );
+          }
+      
+          return [
+            {
+              session_id: data.session_id,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              message_count: 1,
+              title: data.title || 'New Conversation',
+            },
+            ...prev,
+          ];
+        });
       }
 
       const aiResponse = {
@@ -271,6 +360,8 @@ if (!data.translation) {
   <button className="sidebar-item">Progress</button>
 </nav>
 
+
+
         <div
           style={{
             position: 'absolute',
@@ -326,6 +417,95 @@ if (!data.translation) {
         </div>
       </div>
 
+            {/* Chat History Sidebar */}
+            <div
+        style={{
+          width: isChatSidebarOpen ? '260px' : '0',
+          minWidth: isChatSidebarOpen ? '260px' : '0',
+          overflow: 'hidden',
+          transition: 'all 0.3s ease',
+          backgroundColor: 'var(--cards)',
+          borderRight: isChatSidebarOpen
+            ? '1px solid var(--border)'
+            : 'none',
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: isChatSidebarOpen ? '20px 14px' : '0',
+          boxSizing: 'border-box',
+          marginLeft: '256px',
+          flexShrink: 0,
+        }}
+      >
+        <button
+          onClick={handleNewChat}
+          style={{
+            width: '100%',
+            padding: '12px',
+            borderRadius: '10px',
+            border: 'none',
+            backgroundColor: 'var(--primary)',
+            color: 'white',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 600,
+            marginBottom: '24px',
+          }}
+        >
+          + New Chat
+        </button>
+
+        <h3
+          style={{
+            fontSize: '14px',
+            color: 'var(--text-secondary)',
+            marginBottom: '12px',
+          }}
+        >
+          Chat History
+        </h3>
+
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {chatHistory.map((chat) => (
+            <button
+              key={chat.session_id}
+              onClick={() => handleOpenChat(chat.session_id)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                marginBottom: '6px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor:
+                  sessionId === chat.session_id
+                    ? 'var(--background)'
+                    : 'transparent',
+                color: 'var(--text)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontSize: '13px',
+              }}
+            >
+              <div>
+                {chat.title || 'New Conversation'}
+              </div> 
+              <small style={{ color: 'var(--text-secondary)' }}>
+                {new Date(chat.created_at).toLocaleDateString()}
+              </small>
+            </button>
+          ))}
+
+          {chatHistory.length === 0 && (
+            <p style={{
+              fontSize: '12px',
+              color: 'var(--text-secondary)',
+            }}>
+              No previous conversations
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* Main Content */}
       <div
         className="main-content"
@@ -334,8 +514,35 @@ if (!data.translation) {
           display: 'flex',
           flexDirection: 'column',
           height: '100vh',
+          flex: 1,
+          minWidth: 0,
+          marginLeft: 0,
         }}
       >
+
+        {/* Chat History Toggle */}
+<div
+  style={{
+    padding: '10px 24px',
+    borderBottom: '1px solid var(--border)',
+    backgroundColor: 'var(--cards)',
+  }}
+>
+  <button
+    onClick={() => setIsChatSidebarOpen(!isChatSidebarOpen)}
+    style={{
+      padding: '8px 12px',
+      borderRadius: '8px',
+      border: '1px solid var(--border)',
+      backgroundColor: 'var(--background)',
+      color: 'var(--text)',
+      cursor: 'pointer',
+      fontSize: '14px',
+    }}
+  >
+    {isChatSidebarOpen ? '← Hide Chats' : '☰ Chat History'}
+  </button>
+</div>
         {/* Header */}
         <div
           style={{

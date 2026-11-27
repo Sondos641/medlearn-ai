@@ -15,8 +15,12 @@ from database import (
     DB_PATH,
     create_learning_session,
     update_learning_session,
+    save_learning_message,
+    get_learning_sessions,
+    get_learning_messages,
     get_user_by_email,
     verify_password,
+    update_learning_session_title,
 )
 import sqlite3
 import json
@@ -128,9 +132,57 @@ def chat():
         user_id = data.get("user_id")
         session_id = data.get("session_id") or str(uuid.uuid4())
 
+        title = None
+
         if user_id:
             create_learning_session(session_id, user_id)
             update_learning_session(session_id)
+
+            if not data.get("session_id"):
+                try:
+                    title_response = client.chat.completions.create(
+                        model="openai/gpt-oss-20b",
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": (
+                                    "Generate a short title for this conversation "
+                                    "using 3 to 6 words. Return only the title."
+                                )
+                            },
+                            {
+                                "role": "user",
+                                "content": user_message
+                            }
+                        ],
+                        temperature=0.2,
+                        reasoning_effort="low",
+                        max_completion_tokens=256
+                    )
+
+                    print("TITLE RESPONSE:", title_response.choices[0].message)
+
+                    title = title_response.choices[0].message.content or ""
+                    title = title.strip().strip('"').strip("'")
+
+                    if not title:
+                       title = user_message[:40]
+
+                    print("GENERATED TITLE:", repr(title))
+                    
+
+                except Exception as e:
+                    print("TITLE GENERATION ERROR:", str(e))
+                    title = user_message[:40]
+
+                update_learning_session_title(session_id, title)
+   
+       
+     
+
+            
+
+       
 
         system_prompt = """
 You are a nursing educator for the Physical Assessment & Health History course.
@@ -161,11 +213,17 @@ Do not invent medical facts.
         )
 
         answer = response.choices[0].message.content
+       
+
+        if user_id:
+           save_learning_message(session_id, user_id, "user", user_message)
+           save_learning_message(session_id, user_id, "assistant", answer)
 
         return jsonify({
-            "reply": answer,
-            "session_id": session_id
-        })
+           "reply": answer,
+           "session_id": session_id,
+           "title": title
+         })
 
     except Exception as e:
         print("CHAT ERROR:", str(e))
@@ -174,6 +232,36 @@ Do not invent medical facts.
             "error": str(e)
         }), 500
 
+# ============================================================
+# LEARNING CHAT HISTORY
+# ============================================================
+
+@app.route("/learning/sessions", methods=["GET"])
+def learning_history():
+    user_id = request.args.get("user_id")
+
+    if not user_id:
+        return jsonify({"error": "User ID is required"}), 400
+
+    sessions = get_learning_sessions(user_id)
+
+    return jsonify({
+        "sessions": sessions
+    })
+
+
+@app.route("/learning/sessions/<session_id>/messages", methods=["GET"])
+def learning_history_messages(session_id):
+    user_id = request.args.get("user_id")
+
+    if not user_id:
+        return jsonify({"error": "User ID is required"}), 400
+
+    messages = get_learning_messages(session_id, user_id)
+
+    return jsonify({
+        "messages": messages
+    })
 
 # ============================================================
 # ARABIC TRANSLATION
