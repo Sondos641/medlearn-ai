@@ -1,0 +1,127 @@
+/* Scoped Practice workspace. Does not override Login, Dashboard or Learning. */
+.practice-shell{--p-accent:#a99ae7;--p-deep:#262943;--p-soft:rgba(153,136,218,.12);display:flex;min-height:100dvh;height:100dvh;width:100%;overflow:hidden;background:var(--background);color:var(--text);font-family:Inter,system-ui,sans-serif}
+.practice-shell *{box-sizing:border-box}
+.practice-shell button,.practice-shell input{font:inherit}
+.practice-shell button{cursor:pointer}
+.practice-sidebar{width:236px;flex:0 0 236px;display:flex;flex-direction:column;padding:27px 15px 20px;background:var(--cards);border-right:1px solid var(--border);min-height:0}
+.practice-brand{display:flex;align-items:center;gap:11px;padding:0 12px 37px;font-size:18px;font-weight:750;letter-spacing:-.6px;white-space:nowrap}
+.practice-brand b{color:var(--primary)}
+.practice-brand-icon{width:39px;height:39px;border-radius:12px;background:linear-gradient(135deg,#a99ae7,#648ba8);display:grid;place-items:center;color:white;font-size:26px;flex-shrink:0}
+.practice-nav-label,.practice-eyebrow{font-size:10px;font-weight:800;letter-spacing:1.25px;color:var(--text-secondary)}
+.practice-nav-label{padding:0 15px 13px}
+.practice-nav{display:grid;gap:5px}
+.practice-nav-link{min-height:43px;display:flex;align-items:center;gap:12px;padding:10px 13px;border-radius:11px;color:var(--text-secondary);font-size:13px;font-weight:650;text-decoration:none!important}
+.practice-nav-link:hover{background:var(--background);color:var(--text)}
+.practice-nav-link.active{background:var(--p-soft);color:var(--primary)}
+.practice-nav-icon{font-size:19px;width:23px;text-align:center;flex-shrink:0;line-height:1}
+.practice-nav-disabled{opacity:.52;cursor:default}
+.practice-nav-disabled small{font-size:9px;margin-left:auto;letter-spacing:.4px}
+.practice-sidebar-bottom{margin-top:auto;display:grid;gap:7px;padding-top:20px;border-top:1px solid var(--border)}
+.practice-side-action{display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;color:var(--text-secondary);padding:10px 13px;text-align:left;border-radius:10px;font-size:13px;font-weight:600}
+.practice-side-action:hover{background:var(--background)}
+.practice-side-action span{font-size:19px;width:23px;text-align:center}
+.practice-logout{color:var(--error)}
+.practice-main{min-width:0;min-height:0;flex:1;display:flex;flex-direction:column;overflow:hidden}
+.practice-topbar{flex:0 0 auto;min-height:81px;padding:17px 30px;display:flex;align-items:center;justify-content:space-between;gap:20px;background:var(--cards);border-bottom:1px solid var(--border)}
+.practice-topbar h1{font-size:22px;letter-spacing:-.65px;line-height:1.25;margin:5px 0 0;color:var(--text)}
+.practice-user{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text-secondary);white-space:nowrap}
+.practice-avatar{display:grid;place-items:center;width:35px;height:35px;border-radius:11px;background:var(--p-soft);color:var(--primary);font-weight:800}
+.practice-start-screen{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:28px 30px 38px}
+.practice-start-intro{text-align:center;max-width:560px}
+.practice-start-mark{display:grid;place-items:center;margin:0 auto 17px;width:55px;height:55px;border-radius:18px;color:var(--primary);background:var(--p-soft);font-size:29px}
+.practice-start-intro h2{font-size:clamp(22px,2.5vw,32px);letter-spacing:-.8px;margin:10px 0;color:var(--text)}
+.practice-start-intro p{font-size:14px;line-height:1.7;color:var(--text-secondary);margin:0}
+.practice-difficulties{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;width:100%;max-width:850px;margin:29px 0 23px}
+.practice-difficulty{display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-align:left;min-height:182px;padding:21px;border:1px solid var(--border);border-radius:17px;background:var(--cards);color:var(--text);transition:border-color .2s,transform .2s,background .2s}
+.practice-difficulty:hover{transform:translateY(-2px);border-color:var(--primary)}
+.practice-difficulty.selected{border:2px solid var(--primary);background:var(--p-soft);padding:20px}
+.practice-level-number{font-size:11px;font-weight:800;color:var(--primary);letter-spacing:1px}
+.practice-difficulty strong{font-size:19px}
+.practice-difficulty>span:nth-of-type(2){font-size:12px;color:var(--text-secondary);line-height:1.6}
+.practice-choice-indicator{margin-top:auto;font-size:11px;color:var(--primary);font-weight:700}
+.practice-primary{background:var(--primary);color:white;border:0;border-radius:11px;padding:12px 19px;font-size:13px;font-weight:750;white-space:nowrap}
+.practice-primary:hover:not(:disabled){filter:brightness(1.08)}
+.practice-primary:disabled{opacity:.48;cursor:not-allowed}
+.practice-generate{min-width:220px}
+.practice-error{color:var(--error);font-size:12px;line-height:1.5;margin:10px 0}
+.practice-session{flex:1;min-height:0;display:flex;flex-direction:column;padding:19px 24px 22px;gap:15px;overflow:hidden}
+.practice-patient-strip{display:flex;align-items:center;gap:18px;background:var(--cards);border:1px solid var(--border);border-radius:16px;padding:14px 17px;flex-shrink:0;min-width:0}
+.practice-patient-identity{display:flex;align-items:center;gap:13px;flex:1;min-width:0}
+.practice-patient-avatar{width:44px;height:44px;flex-shrink:0;display:grid;place-items:center;background:var(--p-soft);color:var(--primary);border-radius:13px;font-size:22px}
+.practice-patient-identity h2{font-size:17px;margin:4px 0 3px;line-height:1.2}
+.practice-patient-identity p{font-size:11px;color:var(--text-secondary);margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.practice-complaint{display:grid;gap:5px;max-width:290px;min-width:150px;padding:0 16px;border-left:1px solid var(--border)}
+.practice-complaint span{font-size:10px;letter-spacing:.7px;color:var(--text-secondary);font-weight:800}
+.practice-complaint strong{font-size:12px;font-weight:600;line-height:1.4}
+.practice-end-button{border:1px solid var(--border);background:var(--background);color:var(--text);border-radius:10px;padding:10px 13px;white-space:nowrap;font-size:12px;font-weight:700}
+.practice-end-button:hover{border-color:var(--primary)}
+.practice-workspace{flex:1;min-height:0;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:17px;background:var(--cards);overflow:hidden}
+.practice-tabs{display:flex;align-items:stretch;gap:6px;padding:0 15px;border-bottom:1px solid var(--border);flex-shrink:0}
+.practice-tabs button{display:flex;align-items:center;gap:9px;border:0;border-bottom:3px solid transparent;background:transparent;color:var(--text-secondary);padding:14px 16px 12px;font-size:13px;font-weight:700}
+.practice-tabs button.active{color:var(--primary);border-bottom-color:var(--primary)}
+.practice-tabs small{background:var(--p-soft);border-radius:10px;padding:2px 7px}
+.practice-chat-layout{display:flex;flex-direction:column;flex:1;min-height:0;background:var(--background)}
+.practice-chat-messages{flex:1;min-height:0;overflow-y:auto;padding:24px 30px;scrollbar-width:thin}
+.practice-chat-empty{height:100%;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--text-secondary)}
+.practice-empty-symbol{font-size:29px;color:var(--primary);margin-bottom:12px}
+.practice-chat-empty h3{font-size:17px;color:var(--text);margin:0 0 7px}
+.practice-chat-empty p{font-size:13px;max-width:360px;line-height:1.6;margin:0}
+.practice-message-row{display:flex;margin-bottom:17px}
+.practice-message-row.student{justify-content:flex-end}
+.practice-message{max-width:min(75%,650px);padding:13px 16px;background:var(--cards);border:1px solid var(--border);border-radius:14px 14px 14px 4px}
+.practice-message-row.student .practice-message{background:var(--primary);border-color:transparent;color:white;border-radius:14px 14px 4px 14px}
+.practice-message-label{font-size:10px;letter-spacing:.8px;font-weight:800;opacity:.75}
+.practice-message p{font-size:13px;line-height:1.65;margin:7px 0 0;white-space:pre-wrap}
+.practice-listen{margin-top:10px;border:1px solid var(--border);border-radius:8px;background:var(--background);color:var(--text);font-size:11px;padding:5px 9px}
+.practice-typing{font-size:12px;color:var(--text-secondary)}
+.practice-chat-footer{padding:12px 20px 17px;background:var(--cards);border-top:1px solid var(--border);flex-shrink:0}
+.practice-voice-options{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:11px;color:var(--text-secondary);font-size:11px}
+.practice-voice-options label{display:flex;align-items:center;gap:7px}
+.practice-voice-options input{accent-color:var(--primary)}
+.practice-voice-options button{border:0;background:transparent;color:var(--text-secondary);font-size:11px}
+.practice-voice-options button:disabled{opacity:.45;cursor:default}
+.practice-chat-composer{display:flex;gap:10px;align-items:center}
+.practice-chat-composer input{flex:1;min-width:0;background:var(--background);color:var(--text);border:1px solid var(--border);border-radius:11px;padding:13px 14px;font-size:13px;outline:none}
+.practice-chat-composer input:focus{border-color:var(--primary)}
+.practice-mic{border:1px solid var(--border);border-radius:11px;background:var(--background);color:var(--text);height:43px;width:45px;flex-shrink:0}
+.practice-mic.listening{background:#a8324a;color:white}
+.practice-exam-layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(310px,.9fr);gap:0;background:var(--background)}
+.practice-model-panel{display:flex;flex-direction:column;min-height:0;min-width:0;padding:15px;border-right:1px solid var(--border)}
+.practice-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-shrink:0}
+.practice-panel-heading h3{font-size:14px;margin:0 0 4px;color:var(--text)}
+.practice-panel-heading p{font-size:11px;color:var(--text-secondary);margin:0;line-height:1.5}
+.practice-panel-pill{white-space:nowrap;background:var(--p-soft);color:var(--primary);border-radius:8px;padding:6px 9px;font-size:10px;font-weight:800}
+.practice-model-stage{flex:1;min-height:170px;min-width:0;display:flex;align-items:stretch;justify-content:center;overflow:hidden;margin:12px 0 10px;border-radius:13px;background:var(--cards);border:1px solid var(--border)}
+.practice-model-stage>*{width:100%;height:100%;min-height:0}
+.practice-region-choices{display:flex;flex-wrap:wrap;gap:6px;flex-shrink:0;max-height:88px;overflow-y:auto;scrollbar-width:thin}
+.practice-region-choices button{border:1px solid var(--border);border-radius:8px;padding:7px 9px;background:var(--cards);color:var(--text-secondary);font-size:10px;font-weight:650}
+.practice-region-choices button.selected{border-color:var(--primary);background:var(--p-soft);color:var(--primary)}
+.practice-exam-right{display:grid;grid-template-rows:minmax(0,1fr) minmax(140px,.85fr);min-height:0;min-width:0}
+.practice-actions-panel,.practice-findings-panel{min-height:0;display:flex;flex-direction:column;padding:15px}
+.practice-actions-panel{border-bottom:1px solid var(--border)}
+.practice-action-list,.practice-findings-list{min-height:0;overflow-y:auto;scrollbar-width:thin;display:grid;align-content:start;gap:8px;margin-top:12px;padding-right:4px}
+.practice-action-list button{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;border:1px solid var(--border);background:var(--cards);color:var(--text);font-size:12px;font-weight:650;text-align:left}
+.practice-action-list button:hover:not(:disabled){border-color:var(--primary);background:var(--p-soft)}
+.practice-action-list button:disabled{opacity:.55;cursor:wait}
+.practice-action-list button>span:first-child{font-size:16px;width:21px;flex-shrink:0;text-align:center}
+.practice-action-arrow{margin-left:auto;color:var(--primary)}
+.practice-findings-empty{font-size:12px;color:var(--text-secondary);margin:5px 0}
+.practice-finding{border:1px solid var(--border);background:var(--cards);border-radius:11px;padding:11px 12px}
+.practice-finding strong{display:block;font-size:12px}
+.practice-finding small{display:block;margin:5px 0;color:var(--text-secondary);font-size:10px}
+.practice-finding p{font-size:12px;line-height:1.5;margin:0}
+@media(max-width:1100px){.practice-sidebar{width:205px;flex-basis:205px}.practice-session{padding:13px;gap:11px}.practice-complaint{max-width:220px}.practice-exam-layout{grid-template-columns:minmax(0,1fr) minmax(280px,.9fr)}}
+@media(max-width:800px){.practice-shell{height:auto;min-height:100dvh;overflow:visible}.practice-sidebar{width:67px;flex-basis:67px;padding:17px 8px}.practice-brand{padding:0 5px 30px}.practice-brand>span:last-child,.practice-nav-label,.practice-nav-link:not(.active) small,.practice-nav-link{font-size:0}.practice-nav-link{justify-content:center;padding:11px 5px}.practice-nav-icon{font-size:20px}.practice-side-action{font-size:0;justify-content:center;padding:12px 5px}.practice-side-action span{font-size:20px}.practice-main{overflow:visible;min-height:100dvh}.practice-session{overflow:visible}.practice-workspace{min-height:650px}.practice-exam-layout{grid-template-columns:1fr;overflow-y:auto}.practice-model-panel{min-height:440px;border-right:0;border-bottom:1px solid var(--border)}.practice-exam-right{min-height:480px}.practice-patient-strip{flex-wrap:wrap}.practice-complaint{flex:1}.practice-chat-layout{min-height:500px}}
+@media(max-width:520px){.practice-topbar{padding:15px;min-height:70px}.practice-topbar h1{font-size:18px}.practice-user-name{display:none}.practice-session{padding:9px}.practice-patient-strip{padding:12px}.practice-patient-identity{flex-basis:100%}.practice-complaint{border-left:0;padding:0}.practice-tabs button{padding:12px 8px;font-size:11px}.practice-start-screen{padding:22px 15px}.practice-difficulties{grid-template-columns:1fr}.practice-difficulty{min-height:125px}.practice-chat-messages{padding:16px 12px}.practice-chat-footer{padding:12px}.practice-message{max-width:90%}.practice-chat-composer .practice-primary{padding:12px}.practice-voice-options{gap:7px}}
+
+/* Practice report: compact two-column form, no oversized textareas */
+.practice-report-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px;margin-bottom:18px}
+.practice-report-field{min-width:0}
+.practice-report-field:first-child{grid-column:1/-1}
+.practice-report-field label{display:block;margin-bottom:7px!important}
+.practice-report-field textarea{min-height:92px;max-height:220px;resize:vertical;width:100%;box-sizing:border-box}
+.practice-report-footer{position:sticky;bottom:-28px;padding:14px 0;background:var(--background);border-top:1px solid var(--border);z-index:2}
+.practice-rubric-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;padding:0;margin:12px 0;list-style:none;counter-reset:rubric}
+.practice-rubric-list li{counter-increment:rubric;display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:var(--background);color:var(--text);font-size:13px;line-height:1.5}
+.practice-rubric-list li:before{content:counter(rubric);color:var(--primary);font-weight:700;min-width:20px}
+@media(max-width:700px){.practice-report-grid,.practice-rubric-list{grid-template-columns:1fr}.practice-report-field:first-child{grid-column:auto}}

@@ -1,0 +1,57 @@
+/* Shared MedLearn AI student design system. Imported by StudentLayout. */
+.ml-dashboard,.learning-shell,.practice-shell {
+  --primary:#7668ac; --accent:#69a99e; --background:#f7f6fc;
+  --cards:#fff; --text:#24263a; --text-secondary:#6d7187;
+  --border:#e5e3ef; --error:#df6477;
+  --student-sidebar-width:238px;
+  color:var(--text); background:var(--background);
+  font-family:Inter,system-ui,sans-serif;
+}
+.dark .ml-dashboard,.dark .learning-shell,.dark .practice-shell {
+  --primary:#a99ae7; --accent:#79b5aa; --background:#191b2b;
+  --cards:#25283a; --text:#f4f2ff; --text-secondary:#b7b9d1;
+  --border:#393d56; --error:#fa7488;
+}
+.student-sidebar { flex:0 0 var(--student-sidebar-width); width:var(--student-sidebar-width); min-height:0; height:100dvh; position:relative; z-index:40; display:flex; flex-direction:column; padding:22px 16px 20px; background:var(--cards); border-right:1px solid var(--border); }
+.student-brand { display:flex; align-items:center; gap:12px; padding:0 10px; margin-bottom:40px; font-size:18px; letter-spacing:-.55px; font-weight:750; white-space:nowrap; }
+.student-brand strong {color:var(--primary)}
+.student-brand-symbol { display:grid;place-items:center; flex-shrink:0; width:44px;height:44px; border-radius:13px; background:#7668ac;color:white;font-size:27px; }
+.student-nav-heading {padding:0 13px; margin-bottom:13px; color:var(--text-secondary);font-size:10px;letter-spacing:1.6px;font-weight:800;}
+.student-nav-links {display:grid;gap:5px;}
+.student-nav-link {min-height:46px; width:100%;display:flex;align-items:center;gap:13px; padding:11px 13px; border:0;border-radius:11px;background:transparent;color:var(--text-secondary);text-decoration:none!important;text-align:left;font-size:13px;font-weight:650;cursor:pointer;}
+.student-nav-link svg {width:20px;height:20px;flex-shrink:0;}
+.student-nav-link:hover:not(.student-nav-unavailable) {background:rgba(145,125,200,.10);color:var(--text);}
+.student-nav-link.active {background:rgba(145,125,200,.17);color:var(--primary);}
+.student-coming-heading {margin-top:32px;}
+.student-nav-unavailable {opacity:.5;cursor:default;}
+.student-nav-unavailable small {margin-left:auto;font-size:10px;}
+.student-nav-bottom {margin-top:auto;padding-top:17px;border-top:1px solid var(--border);display:grid;gap:5px;}
+.student-nav-logout {color:var(--error);}
+.student-nav-backdrop {display:none;}
+/* Consistent headers and content proportions across modules */
+.learning-shell,.practice-shell {height:100dvh;overflow:hidden;}
+.learning-topbar,.practice-topbar {min-height:82px!important;height:82px;padding:14px 30px!important;background:var(--cards)!important;}
+.learning-topbar h1,.practice-topbar h1 {font-size:21px!important;line-height:1.25;letter-spacing:-.5px;}
+.learning-user-avatar,.practice-avatar,.ml-profile>span {background:rgba(145,125,200,.16)!important;color:var(--primary)!important;}
+.learning-new-chat,.practice-primary {background:#7668ac!important;color:#fff!important;}
+.learning-new-chat:hover,.practice-primary:hover:not(:disabled) {background:#685a9d!important;}
+.practice-start-mark,.practice-level-number,.practice-choice-indicator,.practice-tabs button.active {color:var(--primary)!important;}
+.practice-difficulty.selected {border-color:var(--primary)!important;}
+@media(max-width:800px) {
+ .student-sidebar {position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);transition:transform .2s;}
+ .student-sidebar.student-sidebar-open {transform:translateX(0);}
+ .student-nav-backdrop {display:block;position:fixed;inset:0;z-index:39;background:rgba(0,0,0,.5);border:0;}
+ .learning-shell,.practice-shell {padding-left:0;}
+ .learning-main,.practice-main {min-width:0;}
+}
+
+/* Dashboard originally used a second set of custom palette tokens. Map them to the same shared tokens. */
+.ml-dashboard {--ml-bg:var(--background);--ml-surface:var(--cards);--ml-sidebar:var(--cards);--ml-ink:var(--text);--ml-muted:var(--text-secondary);--ml-line:var(--border);--ml-purple:var(--primary);--ml-soft:rgba(145,125,200,.14);--ml-teal:var(--accent);background:var(--background);color:var(--text);}
+.dark .ml-dashboard {--ml-bg:var(--background);--ml-surface:var(--cards);--ml-sidebar:var(--cards);--ml-ink:var(--text);--ml-muted:var(--text-secondary);--ml-line:var(--border);--ml-purple:var(--primary);--ml-soft:rgba(145,125,200,.14);--ml-teal:var(--accent);}
+.student-mobile-toggle {display:none;}
+@media(max-width:800px) {
+ .student-mobile-toggle {display:grid;place-items:center;position:fixed;top:21px;left:12px;z-index:35;width:36px;height:36px;border:1px solid var(--border);border-radius:9px;background:var(--cards);color:var(--text);cursor:pointer;}
+ .ml-dashboard>.ml-mobile-menu {display:none;}
+ .learning-topbar,.practice-topbar {padding-left:58px!important;}
+ .learning-history {max-width:35vw;}
+}

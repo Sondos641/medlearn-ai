@@ -1,3 +1,4 @@
+import StudentLayout from './StudentLayout';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -117,24 +118,7 @@ const StudentDashboard = () => {
     <div className="ml-dashboard">
       <button className="ml-mobile-menu" type="button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle navigation" aria-expanded={menuOpen}>☰ Menu</button>
       {menuOpen && <button className="ml-menu-backdrop" type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)} />}
-      <aside className={`ml-sidebar ${menuOpen ? 'ml-sidebar-open' : ''}`}>
-        <div className="ml-brand"><span className="ml-brand-mark" aria-hidden="true">✦</span><span>MedLearn <strong>AI</strong></span></div>
-        <div className="ml-nav-label">WORKSPACE</div>
-        <nav className="ml-nav" aria-label="Student navigation">
-          {nav.map((item) => (
-            <button key={item.label} type="button" className={`ml-nav-item ${item.label === 'Dashboard' ? 'ml-active' : ''}`} aria-current={item.label === 'Dashboard' ? 'page' : undefined} onClick={() => navigate(item.path)}>
-              <span className="ml-nav-icon" aria-hidden="true"><Icon name={item.icon} /></span>{item.label}
-            </button>
-          ))}
-          <div className="ml-nav-label ml-nav-secondary">COMING LATER</div>
-          <span className="ml-nav-item ml-nav-disabled" title="Not available yet"><span className="ml-nav-icon"><Icon name="evaluation" /></span>Evaluation <small>Soon</small></span>
-          <span className="ml-nav-item ml-nav-disabled" title="Not available yet"><span className="ml-nav-icon"><Icon name="progress" /></span>Progress <small>Soon</small></span>
-        </nav>
-        <div className="ml-sidebar-bottom">
-          <button type="button" className="ml-sidebar-action" onClick={toggleDarkMode}><span aria-hidden="true"><Icon name={isDarkMode ? 'sun' : 'moon'} /></span>{isDarkMode ? 'Light appearance' : 'Dark appearance'}</button>
-          <button type="button" className="ml-sidebar-action ml-logout" onClick={handleLogout}><span aria-hidden="true"><Icon name="logout" /></span>Sign out</button>
-        </div>
-      </aside>
+      <StudentLayout isDarkMode={isDarkMode} onToggleTheme={toggleDarkMode} onLogout={handleLogout} mobileOpen={menuOpen} onClose={() => setMenuOpen(false)} />
 
       <main className="ml-main">
         <div className="ml-content">
