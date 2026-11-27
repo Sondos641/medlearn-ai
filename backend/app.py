@@ -1008,6 +1008,20 @@ def student_stats(user_id):
                 AND json_extract(session_data, '$.evaluation') IS NOT NULL
             """, (user_id,)).fetchone()
 
+            evaluations = conn.execute("""
+                SELECT
+                    COUNT(*) AS total,
+                    AVG(
+                        CAST(
+                            json_extract(session_data, '$.evaluation.score')
+                            AS REAL
+                        )
+                    ) AS average_score
+                FROM practice_sessions
+                WHERE user_id = ?
+                AND json_extract(session_data, '$.evaluation') IS NOT NULL
+            """, (user_id,)).fetchone()
+
         return jsonify({
             "success": True,
             "learning_sessions": {
@@ -1017,6 +1031,11 @@ def student_stats(user_id):
             "practice_completed": {
                 "total": practice["total"] or 0,
                 "this_week": practice["this_week"] or 0,
+            },
+            "evaluations": {
+                "total": evaluations["total"] or 0,
+                "average_score": round(evaluations["average_score"], 1)
+                if evaluations["average_score"] is not None else 0,
             },
         })
 

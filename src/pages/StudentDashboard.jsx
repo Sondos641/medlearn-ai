@@ -13,6 +13,7 @@ const StudentDashboard = () => {
   const [stats, setStats] = useState({
     learning_sessions: { total: 0, this_week: 0 },
     practice_completed: { total: 0, this_week: 0 },
+    evaluations: { total: 0, average_score: 0 },
   });
 
 
@@ -75,6 +76,7 @@ useEffect(() => {
       setStats({
         learning_sessions: data.learning_sessions,
         practice_completed: data.practice_completed,
+        evaluations: data.evaluations,
       });
 
     } catch (error) {
@@ -113,8 +115,8 @@ useEffect(() => {
     },
     {
       title: 'Evaluations',
-      value: '2',
-      change: '85% avg score',
+      value: stats.evaluations.total,
+      change: `${stats.evaluations.average_score}% avg score`,
       icon: '⭐',
     },
     {
