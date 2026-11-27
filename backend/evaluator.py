@@ -305,7 +305,7 @@ You must return one result for EVERY rubric criterion.
                 }
             ],
             temperature=0.1,
-            max_tokens=7000,
+            max_tokens=3500,
             response_format={"type": "json_object"}
         )
     
