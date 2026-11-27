@@ -1426,6 +1426,7 @@ const handleResumePractice = async (resumeSessionId) => {
                             ['partial', 'Partially completed', feedback.partially_completed],
                             ['achieved', 'What you did well', feedback.did_well],
                             ['focus', 'Topics to focus on', feedback.focus_topics],
+                            ['na', 'Not Applicable', feedback.not_applicable],
                           ].map(([id, label, items]) => (
                             <button key={id} type="button" onClick={() => setResultTab(id)}
                               style={{ padding: '9px 12px', borderRadius: '9px', border: resultTab === id ? '1px solid var(--primary)' : '1px solid var(--border)', background: resultTab === id ? 'var(--primary)' : 'var(--background)', color: resultTab === id ? '#fff' : 'var(--text)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
@@ -1434,7 +1435,13 @@ const handleResumePractice = async (resumeSessionId) => {
                           ))}
                         </div>
                         {(() => {
-                          const groups = { missed: feedback.missed, partial: feedback.partially_completed, achieved: feedback.did_well, focus: feedback.focus_topics };
+                          const groups = {
+                            missed: feedback.missed,
+                            partial: feedback.partially_completed,
+                            achieved: feedback.did_well,
+                            focus: feedback.focus_topics,
+                            na: feedback.not_applicable,
+                          };
                           const items = groups[resultTab];
                           return Array.isArray(items) && items.length ? (
                             <>
