@@ -429,3 +429,89 @@ select {
     margin-left: 0;
   }
 }
+
+/* MedLearn AI — Calm Clinical login. Append to src/index.css. */
+.ml-login {
+  --login-ink: #292b42;
+  --login-muted: #6c7085;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 0.9fr);
+  background: #fbfbfe;
+  color: var(--login-ink);
+}
+.ml-login-intro {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 36px;
+  padding: clamp(28px, 4vw, 64px);
+  background: linear-gradient(145deg, #eeebfa 0%, #e7edf9 55%, #e1f0ed 100%);
+}
+.ml-login-brand { display: flex; align-items: center; gap: 12px; font-size: 21px; font-weight: 600; letter-spacing: -.5px; }
+.ml-login-brand strong { color: #6c63a8; }
+.ml-login-brand-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; background: #6c63a8; color: #fff; font-size: 26px; }
+.ml-login-intro-content { max-width: 560px; }
+.ml-login-eyebrow, .ml-login-kicker { color: #7569b1; font-size: 11px; font-weight: 700; letter-spacing: 1.8px; }
+.ml-login-intro h1 { margin: 18px 0; font-size: clamp(34px, 3.6vw, 57px); line-height: 1.13; letter-spacing: -1.9px; font-weight: 700; }
+.ml-login-intro h1 span { color: #7167ae; }
+.ml-login-intro-content > p { max-width: 460px; color: #5f647b; font-size: 16px; line-height: 1.8; }
+.ml-login-highlights { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 32px; }
+.ml-login-highlights span { padding: 10px 13px; border: 1px solid rgba(108,99,168,.15); border-radius: 999px; background: rgba(255,255,255,.52); font-size: 12px; color: #514d77; }
+.ml-login-intro-footer { font-size: 12px; color: #797b8d; }
+.ml-login-form-side { display: grid; place-items: center; padding: 32px clamp(24px, 5vw, 80px); }
+.ml-login-panel { width: 100%; max-width: 420px; }
+.ml-login-mobile-brand { display: none; }
+.ml-login-panel h2 { margin: 10px 0; font-size: clamp(26px, 2.5vw, 34px); line-height: 1.2; letter-spacing: -1px; }
+.ml-login-subtitle { color: var(--login-muted); font-size: 14px; line-height: 1.7; margin-bottom: 26px; }
+.ml-login-role-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; background: #efeff7; border-radius: 12px; margin-bottom: 24px; }
+.ml-login-role { border: 0; background: transparent; color: #74758a; padding: 12px; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.ml-login-role.is-active { color: #655a9e; background: #fff; box-shadow: 0 2px 10px rgba(37,35,70,.08); }
+.ml-login-form { display: flex; flex-direction: column; }
+.ml-login-form label { color: #42445d; font-size: 13px; font-weight: 600; margin-bottom: 9px; }
+.ml-login-form input { display: block; width: 100%; min-height: 49px; padding: 12px 14px; border: 1px solid #dedfea; border-radius: 10px; background: #fff; color: #292b42; font: inherit; font-size: 14px; outline: none; margin-bottom: 19px; }
+.ml-login-form input:focus { border-color: #8a80c3; box-shadow: 0 0 0 3px rgba(108,99,168,.13); }
+.ml-login-password-wrap { position: relative; }
+.ml-login-password-wrap input { padding-right: 68px; }
+.ml-login-show-password { position: absolute; right: 12px; top: 24px; transform: translateY(-50%); background: transparent; border: 0; color: #6c63a8; font-size: 12px; font-weight: 600; cursor: pointer; padding: 8px; }
+.ml-login-submit { width: 100%; min-height: 50px; border: 0; border-radius: 10px; background: #6c63a8; color: #fff; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 4px; transition: background .2s, transform .2s; }
+.ml-login-submit:hover:not(:disabled) { background: #5c5397; transform: translateY(-1px); }
+.ml-login-submit:disabled { opacity: .65; cursor: wait; }
+.ml-login-error { padding: 12px; border-radius: 9px; background: #fff0f0; color: #9f3030; border: 1px solid #f0caca; font-size: 13px; margin-bottom: 14px; }
+.ml-login-demo { border-top: 1px solid #e8e8f0; margin-top: 26px; padding-top: 12px; }
+.ml-login-demo-toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border: 0; background: transparent; color: #6d688c; font: inherit; font-size: 13px; cursor: pointer; }
+.ml-login-demo-content { background: #f1f0f9; border-radius: 10px; padding: 13px; color: #565673; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.ml-login-demo-content p + p { margin-top: 5px; }
+.ml-login-bottom-note { margin-top: 22px; color: #8a8c9b; font-size: 11px; text-align: center; }
+.ml-login button:focus-visible { outline: 3px solid #9a91d4; outline-offset: 3px; }
+.dark .ml-login { --login-ink: #f2f0ff; --login-muted: #b4b5ca; background: #191c2b; }
+.dark .ml-login-intro { background: linear-gradient(145deg, #28263e, #222d42 60%, #213b3a); }
+.dark .ml-login-brand strong, .dark .ml-login-intro h1 span, .dark .ml-login-eyebrow, .dark .ml-login-kicker { color: #b7a9f4; }
+.dark .ml-login-intro-content > p, .dark .ml-login-intro-footer { color: #b5b6ca; }
+.dark .ml-login-highlights span { background: rgba(255,255,255,.06); color: #d7d0f4; border-color: rgba(255,255,255,.12); }
+.dark .ml-login-role-group, .dark .ml-login-demo-content { background: #292d41; }
+.dark .ml-login-role { color: #b6b8cd; }
+.dark .ml-login-role.is-active { background: #3b3b5c; color: #e0d9ff; }
+.dark .ml-login-form label { color: #e3e2f2; }
+.dark .ml-login-form input { background: #24283a; border-color: #45485f; color: #f5f4ff; }
+.dark .ml-login-show-password, .dark .ml-login-demo-toggle { color: #c0b4f5; }
+.dark .ml-login-demo { border-color: #3e4155; }
+.dark .ml-login-demo-content { color: #d1d1e3; }
+.dark .ml-login-bottom-note { color: #a6a8be; }
+@media (max-width: 850px) {
+  .ml-login { grid-template-columns: 1fr; }
+  .ml-login-intro { display: none; }
+  .ml-login-form-side { padding: 36px 22px; }
+  .ml-login-mobile-brand { display: block; color: #6c63a8; font-size: 20px; font-weight: 700; margin-bottom: 36px; }
+  .dark .ml-login-mobile-brand { color: #b7a9f4; }
+}
+@media (max-height: 660px) and (min-width: 851px) {
+  .ml-login-intro { padding-top: 24px; padding-bottom: 24px; }
+  .ml-login-intro h1 { font-size: 34px; }
+  .ml-login-highlights { margin-top: 16px; }
+  .ml-login-form-side { padding-top: 18px; padding-bottom: 18px; }
+  .ml-login-subtitle { margin-bottom: 14px; }
+  .ml-login-role-group { margin-bottom: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .ml-login-submit { transition: none; } }
