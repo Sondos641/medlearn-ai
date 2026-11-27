@@ -74,9 +74,9 @@ useEffect(() => {
       }
 
       setStats({
-        learning_sessions: data.learning_sessions,
-        practice_completed: data.practice_completed,
-        evaluations: data.evaluations,
+        learning_sessions: data.learning_sessions ?? { total: 0, this_week: 0 },
+        practice_completed: data.practice_completed ?? { total: 0, this_week: 0 },
+        evaluations: data.evaluations ?? { total: 0, average_score: 0 },
       });
 
     } catch (error) {
@@ -103,20 +103,20 @@ useEffect(() => {
   const statsCards = [
     {
       title: 'Learning Sessions',
-      value: stats.learning_sessions.total,
-     change: `+${stats.learning_sessions.this_week} this week`,
+      value: stats.learning_sessions?.total ?? 0,
+     change: `+${stats.learning_sessions?.this_week ?? 0} this week`,
       icon: '📚',
     },
     {
       title: 'Practice Completed',
-      value: stats.practice_completed.total,
-      change: `+${stats.practice_completed.this_week} this week`,
+      value: stats.practice_completed?.total ?? 0,
+      change: `+${stats.practice_completed?.this_week ?? 0} this week`,
       icon: '🎯',
     },
     {
       title: 'Evaluations',
-      value: stats.evaluations.total,
-      change: `${stats.evaluations.average_score}% avg score`,
+      value: stats.evaluations?.total ?? 0,
+      change: `${stats.evaluations?.average_score ?? 0}% avg score`,
       icon: '⭐',
     },
     {

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 import logo from '../assets/Logo 2 without background.png';
+import Patient3DViewer from '../components/Patient3DViewer';
 const StudentPractice = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -108,6 +109,7 @@ const StudentPractice = () => {
 
   const [assessmentHistory, setAssessmentHistory] = useState([]);
   const [activeAssessment, setActiveAssessment] = useState(null);
+  const [selectedBodyRegion, setSelectedBodyRegion] = useState('heart');
   const [assessmentError, setAssessmentError] = useState('');
   const [sessionStage, setSessionStage] = useState('simulation');
   const [report, setReport] = useState({
@@ -355,6 +357,19 @@ const handleResumePractice = async (resumeSessionId) => {
     { id: '14', label: 'Upper Capillary Refill', icon: '🖐️' },
     { id: '15', label: 'Lower Capillary Refill', icon: '🦶' },
   ];
+
+  // Keep existing action IDs: the Flask assessment endpoint depends on them.
+  const bodyRegions = [
+    { id: 'neck', label: 'Neck & carotids', actions: ['7', '8'] },
+    { id: 'heart', label: 'Heart / apex', actions: ['2', '3', '4', '5', '6'] },
+    { id: 'chest', label: 'Chest / precordium', actions: ['1'] },
+    { id: 'upper', label: 'Upper extremities', actions: ['9', '10'] },
+    { id: 'hands', label: 'Hands / capillary refill', actions: ['14'] },
+    { id: 'lower', label: 'Lower extremities', actions: ['11', '12', '13'] },
+    { id: 'feet', label: 'Feet / capillary refill', actions: ['15'] },
+  ];
+  const selectedBodyRegionInfo = bodyRegions.find((region) => region.id === selectedBodyRegion) || bodyRegions[1];
+  const visiblePhysicalActions = physicalActions.filter((action) => selectedBodyRegionInfo.actions.includes(action.id));
 
   const handlePhysicalAssessment = async (action) => {
     if (!sessionId || activeAssessment) return;
@@ -1108,91 +1123,52 @@ const handleResumePractice = async (resumeSessionId) => {
               )}
               {/* ================= PHYSICAL EXAM ================= */}
               {activeTab === 'physical' && (
-                <div
-                  style={{
-                    padding: '24px',
-                    backgroundColor: 'var(--background)',
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '16px',
-                      padding: '16px',
-                      marginBottom: '18px',
-                      borderRadius: '14px',
-                      border: '1px solid var(--border)',
-                      backgroundColor: 'var(--cards)',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: '64px',
-                        height: '84px',
-                        borderRadius: '12px',
-                        border: '1px dashed var(--border)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '34px',
-                        flexShrink: 0,
-                      }}
-                    >
-                      🧍
-                    </div>
+                <div style={{ padding: '24px', backgroundColor: 'var(--background)' }}>
+                  <div style={{ marginBottom: 16 }}>
+                    <h3 style={{ margin: '0 0 6px', color: 'var(--text)' }}>Interactive Physical Examination</h3>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 13 }}>
+                      Select a body marker to perform a cardiovascular assessment. Only performed findings are revealed.
+                    </p>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 20, alignItems: 'start' }}>
                     <div>
-                      <h3 style={{ margin: '0 0 4px', color: 'var(--text)' }}>
-                        Physical Examination
-                      </h3>
-                      <p
-                        style={{
-                          margin: 0,
-                          color: 'var(--text-secondary)',
-                          fontSize: '13px',
-                          lineHeight: 1.5,
-                        }}
-                      >
-                        Select an examination action. Only the finding for the action you perform will be revealed.
-                        The 3D patient can replace this placeholder later.
-                      </p>
+                      <Patient3DViewer
+                        sex={patient?.sex}
+                        selectedRegion={selectedBodyRegion}
+                        onSelectRegion={setSelectedBodyRegion}
+                      />
+                      <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginTop: 12 }}>
+                        {bodyRegions.map((region) => (
+                          <button key={region.id} type="button" onClick={() => setSelectedBodyRegion(region.id)}
+                            aria-pressed={selectedBodyRegion === region.id}
+                            style={{ padding: '8px 10px', borderRadius: 9, cursor: 'pointer', fontSize: 12,
+                              border: selectedBodyRegion === region.id ? '2px solid var(--primary)' : '1px solid var(--border)',
+                              background: 'var(--cards)', color: 'var(--text)' }}>
+                            {region.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ padding: 18, borderRadius: 14, background: 'var(--cards)', border: '1px solid var(--border)' }}>
+                      <h3 style={{ margin: '0 0 8px', color: 'var(--text)' }}>{selectedBodyRegionInfo.label}</h3>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: '0 0 16px' }}>Choose an examination action for this region.</p>
+                      <div style={{ display: 'grid', gap: 10 }}>
+                        {visiblePhysicalActions.map((action) => {
+                          const loading = activeAssessment === action.id;
+                          return (
+                            <button key={action.id} type="button" onClick={() => handlePhysicalAssessment(action)}
+                              disabled={Boolean(activeAssessment)}
+                              style={{ padding: '13px 14px', borderRadius: 12, textAlign: 'left', fontSize: 13,
+                                border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text)',
+                                cursor: activeAssessment ? 'wait' : 'pointer', opacity: activeAssessment && !loading ? 0.6 : 1 }}>
+                              {loading ? '⏳ Assessing...' : `${action.icon} ${action.label}`}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
-
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-                      gap: '10px',
-                    }}
-                  >
-                    {physicalActions.map((action) => {
-                      const loading = activeAssessment === action.id;
-                      return (
-                        <button
-                          key={action.id}
-                          onClick={() => handlePhysicalAssessment(action)}
-                          disabled={Boolean(activeAssessment)}
-                          style={{
-                            padding: '13px 14px',
-                            borderRadius: '12px',
-                            border: '1px solid var(--border)',
-                            backgroundColor: 'var(--cards)',
-                            color: 'var(--text)',
-                            cursor: activeAssessment ? 'not-allowed' : 'pointer',
-                            textAlign: 'left',
-                            fontSize: '13px',
-                            fontWeight: 500,
-                            opacity: activeAssessment && !loading ? 0.6 : 1,
-                          }}
-                        >
-                          {loading ? '⏳ Assessing...' : `${action.icon} ${action.label}`}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {assessmentError && (
+{assessmentError && (
                     <div
                       style={{
                         marginTop: '16px',
@@ -1267,10 +1243,10 @@ const handleResumePractice = async (resumeSessionId) => {
                       </div>
                     </div>
                   )}
-                </div>
+                                 </div>
               )}
             </div>
-            {/* END SESSION */}
+{/* END SESSION */}
             <div
               style={{
                 display: 'flex',

@@ -359,3 +359,73 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ========================================
+   MEDLEARN AI — LAYOUT FIXES
+   ======================================== */
+
+/* Ensure the application fills the screen */
+html,
+body,
+#root {
+  min-height: 100%;
+  width: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+/* Fix sidebar navigation links */
+.sidebar-item {
+  text-decoration: none;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.sidebar-item:visited {
+  color: var(--text-secondary);
+}
+
+.sidebar-item.active,
+.sidebar-item.active:visited {
+  color: white;
+}
+
+.sidebar-item:hover {
+  text-decoration: none;
+}
+
+/* Fix main content alignment */
+.main-content {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+
+/* Prevent cards and grids from overflowing */
+.grid-3,
+.grid-4 {
+  min-width: 0;
+}
+
+.grid-3 > *,
+.grid-4 > * {
+  min-width: 0;
+}
+
+/* Consistent button typography */
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+/* Improve responsive layouts */
+@media (max-width: 768px) {
+  .main-content {
+    width: 100%;
+    margin-left: 0;
+  }
+}
