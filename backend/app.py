@@ -22,6 +22,8 @@ from database import (
     verify_password,
     update_learning_session_title,
 )
+
+from dataset import initialize_dataset
 import sqlite3
 import json
 
@@ -56,6 +58,7 @@ CORS(app)
 # hidden_case is NEVER sent to the browser.
 
 init_db()
+initialize_dataset()
 practice_sessions = load_sessions()
 
 

@@ -74,10 +74,10 @@ useEffect(() => {
       }
 
       setStats({
-        learning_sessions: data.learning_sessions,
-        practice_completed: data.practice_completed,
-        evaluations: data.evaluations,
-      });
+  learning_sessions: data.learning_sessions || { total: 0, this_week: 0 },
+  practice_completed: data.practice_completed || { total: 0, this_week: 0 },
+  evaluations: data.evaluations || { total: 0, average_score: 0 },
+});
 
     } catch (error) {
       console.error('Stats fetch error:', error);
