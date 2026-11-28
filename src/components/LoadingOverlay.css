@@ -1,0 +1,7 @@
+.medlearn-loading-overlay{position:fixed;inset:0;z-index:2500;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(12,15,29,.72);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+.medlearn-loading-panel{width:min(100%,360px);padding:36px 26px;text-align:center;border:1px solid var(--border,rgba(169,154,231,.2));border-radius:20px;background:var(--cards,#25283b);box-shadow:0 22px 80px rgba(0,0,0,.24);color:var(--text,#f7f5ff);font-family:Inter,system-ui,sans-serif}
+.medlearn-loading-spinner{height:54px;width:54px;margin:0 auto 22px;border:5px solid rgba(169,154,231,.19);border-top-color:#a99ae7;border-right-color:#a99ae7;border-radius:50%;animation:medlearn-spin .85s linear infinite}
+.medlearn-loading-panel h2{font-size:18px;line-height:1.4;font-weight:700;margin:0 0 9px;color:var(--text,#f7f5ff)}
+.medlearn-loading-panel p{font-size:13px;line-height:1.55;margin:0;color:var(--text-secondary,#aaaec4)}
+@keyframes medlearn-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.medlearn-loading-spinner{animation-duration:2.5s}}

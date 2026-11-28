@@ -1,593 +1,88 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/Logo 2 without background.png';
+import './FacultyDashboard.css';
+import LoadingOverlay from '../components/LoadingOverlay';
 
-const FacultyDashboard = () => {
+const paths = {
+  dashboard: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
+  students: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></>,
+  reports: <><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></>,
+  analytics: <><path d="M4 20v-7M10 20V8M16 20V4M22 20H2"/></>,
+  settings: <><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></>,
+  logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></>,
+  book: <><path d="M12 6c-3-2-6-2-9-1v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Z"/><path d="M12 6v14"/></>,
+  check: <><path d="m4 12 5 5L20 6"/></>,
+};
+const Icon = ({ name }) => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
+const safeNumber = (value) => Number.isFinite(Number(value)) ? Number(value) : 0;
+const dateText = (value) => { if (!value) return 'No activity'; const d = new Date(String(value).replace(' ', 'T')); return Number.isNaN(d.getTime()) ? 'No activity' : d.toLocaleString(); };
+
+export default function FacultyDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [view, setView] = useState('dashboard');
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [students, setStudents] = useState([]);
   const [summary, setSummary] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [query, setQuery] = useState('');
 
+  useEffect(() => { document.documentElement.classList.toggle('dark', isDarkMode); localStorage.setItem('darkMode', String(isDarkMode)); }, [isDarkMode]);
   useEffect(() => {
-    const isDark = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(isDark);
-
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    }
-  }, []);
-
-  // Fetch real faculty and student data
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const fetchFacultyData = async () => {
+    if (!user?.id) { setLoading(false); return; }
+    const controller = new AbortController();
+    (async () => {
       try {
-        setLoading(true);
-        setError('');
-
-        const response = await fetch(
-          `http://127.0.0.1:5000/faculty/${user.id}/students`
-        );
-
+        setLoading(true); setError('');
+        const response = await fetch(`http://127.0.0.1:5000/faculty/${user.id}/students`, { signal: controller.signal });
         const result = await response.json();
-
-        if (!response.ok || !result.success) {
-          throw new Error(result.error || 'Failed to load students.');
-        }
-
-        setStudents(result.students);
-        setSummary(result.summary);
-      } catch (err) {
-        console.error('Faculty dashboard error:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFacultyData();
+        if (!response.ok || !result.success) throw new Error(result.error || 'Failed to load students.');
+        setStudents(Array.isArray(result.students) ? result.students : []);
+        setSummary(result.summary || {});
+      } catch (err) { if (err.name !== 'AbortError') { console.error('Faculty dashboard error:', err); setError(err.message); } }
+      finally { if (!controller.signal.aborted) setLoading(false); }
+    })();
+    return () => controller.abort();
   }, [user?.id]);
 
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-
-    setIsDarkMode(newDarkMode);
-    localStorage.setItem('darkMode', newDarkMode);
-
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  // Calculate real dashboard statistics
-  const totalSessions =
-    (summary.total_practice_sessions || 0) +
-    (summary.total_learning_sessions || 0);
-
-  const totalCompleted = students.reduce(
-    (total, student) => total + student.practice_completed,
-    0
-  );
-
-  const completionRate =
-    summary.total_practice_sessions > 0
-      ? Math.round(
-          (totalCompleted / summary.total_practice_sessions) * 100
-        )
-      : null;
-
-  const summaryStats = [
-    {
-      label: 'Total Students',
-      value: summary.total_students ?? students.length,
-      icon: '👥',
-    },
-    {
-      label: 'Total Sessions',
-      value: totalSessions,
-      icon: '📊',
-    },
-    {
-      label: 'Avg. Practice Score',
-      value:
-        summary.average_score !== null &&
-        summary.average_score !== undefined
-          ? `${summary.average_score}%`
-          : 'N/A',
-      icon: '📈',
-    },
-    {
-      label: 'Completion Rate',
-      value: completionRate !== null ? `${completionRate}%` : 'N/A',
-      icon: '✅',
-    },
+  const totalCompleted = students.reduce((sum, s) => sum + safeNumber(s.practice_completed), 0);
+  const practiceTotal = safeNumber(summary.total_practice_sessions);
+  const completionRate = practiceTotal > 0 ? `${Math.min(100, Math.round(totalCompleted / practiceTotal * 100))}%` : 'N/A';
+  const stats = [
+    { label: 'Total students', value: summary.total_students ?? students.length, icon: 'students', detail: 'Assigned learners' },
+    { label: 'Total sessions', value: safeNumber(summary.total_learning_sessions) + practiceTotal, icon: 'book', detail: 'Learning + practice' },
+    { label: 'Average practice score', value: summary.average_score == null ? 'N/A' : `${summary.average_score}%`, icon: 'analytics', detail: 'Across evaluated sessions' },
+    { label: 'Practice completion', value: completionRate, icon: 'check', detail: `${totalCompleted} completed sessions` },
   ];
-
-  return (
-    <div className="dashboard">
-      <div className="sidebar">
-        <div style={{ marginBottom: '32px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div
-              style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <img
-                src={logo}
-                alt="MedLearn AI Logo"
-                style={{ width: '80px', height: '80px', objectFit: 'contain' }}
-              />
-            </div>
-
-            <span style={{ fontWeight: 600, fontSize: '18px', color: 'var(--text)' }}>
-              MedLearn AI
-            </span>
-          </div>
-        </div>
-
-        <nav className="sidebar-nav">
-          <button className="sidebar-item active">Dashboard</button>
-          <button className="sidebar-item">Students</button>
-          <button className="sidebar-item">Reports</button>
-          <button className="sidebar-item">Analytics</button>
-          <button className="sidebar-item">Settings</button>
-        </nav>
-
-        <div style={{ position: 'absolute', bottom: '24px', left: '24px', right: '24px' }}>
-          <div className="flex-between" style={{ marginBottom: '16px' }}>
-            <span className="text-body">
-              {isDarkMode ? 'Light Mode' : 'Dark Mode'}
-            </span>
-
-            <button
-              onClick={toggleDarkMode}
-              style={{
-                padding: '8px',
-                borderRadius: '8px',
-                background: 'var(--background)',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              {isDarkMode ? '☀️' : '🌙'}
-            </button>
-          </div>
-
-          <div className="flex-between">
-            <span className="text-body" style={{ color: 'var(--error)' }}>
-              Logout
-            </span>
-
-            <button
-              onClick={handleLogout}
-              style={{
-                padding: '8px',
-                borderRadius: '8px',
-                background: 'var(--error)',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'white',
-              }}
-            >
-              🚪
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="main-content">
-        <div style={{ marginBottom: '32px' }}>
-          <h1 className="h1">
-            Welcome back, Professor {user?.name || 'Faculty'}! 📊
-          </h1>
-
-          <p className="text-large" style={{ marginTop: '4px' }}>
-            Monitor student progress and performance across all modules
-          </p>
-        </div>
-
-        {/* Summary Statistics */}
-        <div className="grid-4" style={{ marginBottom: '32px' }}>
-          {summaryStats.map((stat, index) => (
-            <div key={index} className="stat-card">
-              <div className="flex-between">
-                <span style={{ fontSize: '32px' }}>{stat.icon}</span>
-                <span className="stat-value" style={{ fontSize: '24px' }}>
-                  {loading ? '...' : stat.value}
-                </span>
-              </div>
-
-              <h3 className="h2" style={{ marginTop: '12px', marginBottom: '4px' }}>
-                {stat.label}
-              </h3>
-            </div>
-          ))}
-        </div>
-
-        {/* Student Performance Table */}
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '24px', borderBottom: '1px solid var(--border)' }}>
-            <h2 className="h2">Student Performance Overview</h2>
-
-            <p className="text-body" style={{ marginTop: '4px' }}>
-              View detailed reports and logs for each student
-            </p>
-          </div>
-
-          {loading ? (
-            <p style={{ padding: '24px', color: 'var(--text-secondary)' }}>
-              Loading students...
-            </p>
-          ) : error ? (
-            <p style={{ padding: '24px', color: 'var(--error)' }}>
-              {error}
-            </p>
-          ) : students.length === 0 ? (
-            <p style={{ padding: '24px', color: 'var(--text-secondary)' }}>
-              No assigned students found.
-            </p>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead style={{ backgroundColor: 'var(--background)' }}>
-                  <tr>
-                    <th style={{ textAlign: 'left', padding: '16px', fontSize: '14px', color: 'var(--text-secondary)' }}>Student</th>
-                    <th style={{ textAlign: 'left', padding: '16px', fontSize: '14px', color: 'var(--text-secondary)' }}>Progress</th>
-                    <th style={{ textAlign: 'left', padding: '16px', fontSize: '14px', color: 'var(--text-secondary)' }}>Sessions</th>
-                    <th style={{ textAlign: 'left', padding: '16px', fontSize: '14px', color: 'var(--text-secondary)' }}>Avg. Score</th>
-                    <th style={{ textAlign: 'left', padding: '16px', fontSize: '14px', color: 'var(--text-secondary)' }}>Last Active</th>
-                    <th style={{ textAlign: 'left', padding: '16px', fontSize: '14px', color: 'var(--text-secondary)' }}>Actions</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {students.map((student) => {
-                    const totalStudentSessions =
-                      student.practice_sessions + student.learning_sessions;
-
-                    const progress =
-                      student.practice_sessions > 0
-                        ? Math.round(
-                            (student.practice_completed / student.practice_sessions) * 100
-                          )
-                        : 0;
-
-                    return (
-                      <tr
-                        key={student.id}
-                        style={{ borderTop: '1px solid var(--border)' }}
-                      >
-                        <td style={{ padding: '16px' }}>
-                          <div>
-                            <p style={{ fontWeight: 500, marginBottom: '4px', color: 'var(--text)' }}>
-                              {student.name}
-                            </p>
-
-                            <p className="text-body" style={{ fontSize: '12px' }}>
-                              {student.email}
-                            </p>
-                          </div>
-                        </td>
-
-                        <td style={{ padding: '16px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div
-                              style={{
-                                flex: 1,
-                                backgroundColor: 'var(--border)',
-                                borderRadius: '999px',
-                                height: '8px',
-                                maxWidth: '96px',
-                              }}
-                            >
-                              <div
-                                style={{
-                                  width: `${progress}%`,
-                                  backgroundColor: 'var(--primary)',
-                                  borderRadius: '999px',
-                                  height: '8px',
-                                }}
-                              />
-                            </div>
-
-                            <span className="text-body">{progress}%</span>
-                          </div>
-                        </td>
-
-                        <td style={{ padding: '16px', color: 'var(--text)' }}>
-                          {totalStudentSessions}
-                        </td>
-
-                        <td style={{ padding: '16px' }}>
-                          <span
-                            style={{
-                              fontWeight: 600,
-                              color:
-                                student.average_score === null
-                                  ? 'var(--text-secondary)'
-                                  : student.average_score >= 80
-                                  ? 'var(--success)'
-                                  : student.average_score >= 70
-                                  ? 'var(--warning)'
-                                  : 'var(--error)',
-                            }}
-                          >
-                            {student.average_score !== null
-                              ? `${student.average_score}%`
-                              : 'N/A'}
-                          </span>
-                        </td>
-
-                        <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>
-                          {student.last_active
-                            ? new Date(student.last_active.replace(' ', 'T')).toLocaleString()
-                            : 'No activity'}
-                        </td>
-
-                        <td style={{ padding: '16px' }}>
-                          <button
-                            onClick={() => setSelectedStudent(student)}
-                            style={{
-                              padding: '6px 12px',
-                              fontSize: '14px',
-                              color: 'var(--primary)',
-                              border: '1px solid var(--primary)',
-                              borderRadius: '8px',
-                              background: 'transparent',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            View Report
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Module Activity */}
-        <div style={{ marginTop: '32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-          <div className="card">
-            <h3 className="h2" style={{ marginBottom: '16px' }}>
-              Module Activity
-            </h3>
-
-            <div style={{ marginBottom: '16px' }}>
-              <div className="flex-between" style={{ marginBottom: '8px' }}>
-                <span className="text-body">Learning Sessions</span>
-                <span className="text-body">{summary.total_learning_sessions || 0}</span>
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '16px' }}>
-              <div className="flex-between" style={{ marginBottom: '8px' }}>
-                <span className="text-body">Practice Sessions</span>
-                <span className="text-body">{summary.total_practice_sessions || 0}</span>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex-between" style={{ marginBottom: '8px' }}>
-                <span className="text-body">Completed Practice Sessions</span>
-                <span className="text-body">{totalCompleted}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <h3 className="h2" style={{ marginBottom: '16px' }}>
-              Quick Actions
-            </h3>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button
-                style={{
-                  padding: '12px',
-                  textAlign: 'left',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  width: '100%',
-                }}
-              >
-                <span style={{ fontWeight: 500, color: 'var(--text)' }}>
-                  📊 Generate Class Report
-                </span>
-
-                <p className="text-body" style={{ fontSize: '12px', marginTop: '4px' }}>
-                  Export performance data for all students
-                </p>
-              </button>
-
-              <button
-                style={{
-                  padding: '12px',
-                  textAlign: 'left',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  width: '100%',
-                }}
-              >
-                <span style={{ fontWeight: 500, color: 'var(--text)' }}>
-                  📝 Review Evaluation Sessions
-                </span>
-
-                <p className="text-body" style={{ fontSize: '12px', marginTop: '4px' }}>
-                  Check pending evaluation reports
-                </p>
-              </button>
-
-              <button
-                style={{
-                  padding: '12px',
-                  textAlign: 'left',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  width: '100%',
-                }}
-              >
-                <span style={{ fontWeight: 500, color: 'var(--text)' }}>
-                  🔧 Manage Cases
-                </span>
-
-                <p className="text-body" style={{ fontSize: '12px', marginTop: '4px' }}>
-                  Update patient scenarios and checklists
-                </p>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Student Report Modal */}
-      {selectedStudent && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-          onClick={() => setSelectedStudent(null)}
-        >
-          <div
-            style={{
-              backgroundColor: 'var(--cards)',
-              borderRadius: '16px',
-              maxWidth: '600px',
-              width: '90%',
-              maxHeight: '80vh',
-              overflow: 'auto',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ padding: '24px', borderBottom: '1px solid var(--border)' }}>
-              <h2 className="h2">
-                {selectedStudent.name} - Performance Report
-              </h2>
-            </div>
-
-            <div style={{ padding: '24px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-                <div style={{ padding: '16px', backgroundColor: 'var(--background)', borderRadius: '8px' }}>
-                  <p className="text-body">Practice Sessions</p>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--primary)' }}>
-                    {selectedStudent.practice_sessions}
-                  </p>
-                </div>
-
-                <div style={{ padding: '16px', backgroundColor: 'var(--background)', borderRadius: '8px' }}>
-                  <p className="text-body">Average Score</p>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--primary)' }}>
-                    {selectedStudent.average_score !== null
-                      ? `${selectedStudent.average_score}%`
-                      : 'N/A'}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="h2" style={{ marginBottom: '12px' }}>
-                  Recent Activity Log
-                </h3>
-
-                {selectedStudent.practice_work?.length > 0 ? (
-                  selectedStudent.practice_work.map((work) => (
-                    <div
-                      key={work.session_id}
-                      style={{
-                        borderLeft: '2px solid var(--primary)',
-                        paddingLeft: '16px',
-                        marginBottom: '16px',
-                      }}
-                    >
-                      <p className="text-body">
-                        Practice: {work.title || 'Practice Session'}
-                      </p>
-
-                      <p className="text-body">
-                        System: {work.system || 'N/A'} | Difficulty: {work.difficulty || 'N/A'}
-                      </p>
-
-                      <p className="text-body">
-                        Status: {work.completed ? 'Completed' : 'In Progress'}
-                      </p>
-
-                      <p className="text-body">
-                        Score: {work.score !== null ? `${work.score}%` : 'Not evaluated'}
-                      </p>
-
-                      {work.student_report && (
-                        <p className="text-body" style={{ marginTop: '8px' }}>
-                          Report: {work.student_report.interview_summary || 'No report available'}
-                        </p>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-body">
-                    No practice activity recorded yet.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div style={{ padding: '24px', borderTop: '1px solid var(--border)' }}>
-              <button
-                onClick={() => setSelectedStudent(null)}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: 'var(--primary)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                }}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default FacultyDashboard;
+  const visibleStudents = useMemo(() => students.filter(s => `${s.name || ''} ${s.email || ''}`.toLowerCase().includes(query.toLowerCase())), [students, query]);
+  const selectView = (next) => { setView(next); setMobileOpen(false); };
+  const nav = [ ['Dashboard', 'dashboard', 'dashboard'], ['Students', 'students', 'students'], ['Reports', 'reports', 'reports'] ];
+  const studentTable = (list) => <div className="faculty-table-wrap"><table className="faculty-table"><thead><tr><th>Student</th><th>Practice completion</th><th>Sessions</th><th>Avg. score</th><th>Last active</th><th>Report</th></tr></thead><tbody>{list.map(s => {
+    const completed = safeNumber(s.practice_completed), practices = safeNumber(s.practice_sessions), percent = practices ? Math.min(100, Math.round(completed / practices * 100)) : 0;
+    return <tr key={s.id}><td><strong>{s.name || 'Unnamed student'}</strong><small>{s.email}</small></td><td><div className="faculty-progress"><span style={{width:`${percent}%`}}/></div><small>{completed}/{practices} completed · {percent}%</small></td><td>{safeNumber(s.practice_sessions) + safeNumber(s.learning_sessions)}</td><td><strong>{s.average_score == null ? 'N/A' : `${s.average_score}%`}</strong></td><td className="faculty-muted">{dateText(s.last_active)}</td><td><button type="button" className="faculty-outline-button" onClick={() => setSelectedStudent(s)}>View report</button></td></tr>;
+  })}</tbody></table>{list.length === 0 && <p className="faculty-empty">No students match your search.</p>}</div>;
+  return <div className="faculty-shell">
+    <LoadingOverlay active={loading} title="Loading faculty dashboard..." description="Fetching your students and class performance." />
+    <button type="button" className="faculty-mobile-toggle" onClick={() => setMobileOpen(true)} aria-label="Open faculty menu">☰</button>
+    {mobileOpen && <button type="button" className="faculty-backdrop" aria-label="Close menu" onClick={() => setMobileOpen(false)}/>}
+    <aside className={`faculty-sidebar ${mobileOpen ? 'faculty-sidebar-open' : ''}`}>
+      <div className="faculty-brand"><span className="faculty-brand-symbol">✦</span><span>MedLearn <strong>AI</strong></span></div>
+      <div className="faculty-nav-heading">WORKSPACE</div>
+      <nav className="faculty-nav">{nav.map(([label, icon, key]) => <button type="button" key={key} className={`faculty-nav-link ${view === key ? 'active' : ''}`} onClick={() => selectView(key)}><Icon name={icon}/>{label}</button>)}</nav>
+      <div className="faculty-nav-heading faculty-coming">COMING LATER</div>
+      <div className="faculty-nav-link faculty-disabled"><Icon name="analytics"/>Analytics <small>Soon</small></div>
+      <div className="faculty-nav-link faculty-disabled"><Icon name="settings"/>Settings <small>Soon</small></div>
+      <div className="faculty-sidebar-bottom"><button type="button" className="faculty-nav-link" onClick={() => setIsDarkMode(v => !v)}><Icon name="settings"/>{isDarkMode ? 'Light appearance' : 'Dark appearance'}</button><button type="button" className="faculty-nav-link faculty-logout" onClick={() => { logout(); navigate('/login'); }}><Icon name="logout"/>Sign out</button></div>
+    </aside>
+    <main className="faculty-main"><div className="faculty-content">
+      <header className="faculty-page-header"><div><p className="faculty-eyebrow">FACULTY WORKSPACE</p><h1>{view === 'dashboard' ? <>Welcome back, <span>{user?.name || 'Professor'} ✦</span></> : view === 'students' ? 'Students' : 'Student reports'}</h1><p>{view === 'dashboard' ? 'Monitor student learning and clinical performance.' : view === 'students' ? 'Find students and review their progress.' : 'Explore individual practice sessions and assessment results.'}</p></div><div className="faculty-profile"><span>{(user?.name || 'F').charAt(0).toUpperCase()}</span><div><strong>{user?.name || 'Faculty'}</strong><small>Faculty member</small></div></div></header>
+      {view === 'dashboard' && <><div className="faculty-stats">{stats.map(s => <article className="faculty-stat" key={s.label}><div className="faculty-stat-icon"><Icon name={s.icon}/></div><div><strong>{loading ? '…' : s.value}</strong><span>{s.label}</span><small>{s.detail}</small></div></article>)}</div><section className="faculty-panel faculty-overview"><div className="faculty-section-heading"><div><p className="faculty-eyebrow">CLASS OVERVIEW</p><h2>Module activity</h2><p>Real activity across assigned students</p></div></div><div className="faculty-module-grid"><div><span>Learning sessions</span><strong>{safeNumber(summary.total_learning_sessions)}</strong></div><div><span>Practice sessions</span><strong>{practiceTotal}</strong></div><div><span>Completed practices</span><strong>{totalCompleted}</strong></div></div></section></>}
+      <section className="faculty-panel"><div className="faculty-section-heading"><div><h2>{view === 'reports' ? 'Individual student reports' : 'Student performance overview'}</h2><p>Review practice completion, scores, and recent clinical activity.</p></div><div className="faculty-table-actions"><input aria-label="Search students" placeholder="Search students…" value={query} onChange={e => setQuery(e.target.value)}/>{view === 'dashboard' && <button type="button" className="faculty-outline-button" onClick={() => selectView('students')}>View all students</button>}</div></div>{loading ? <p className="faculty-empty">Loading students…</p> : error ? <p className="faculty-empty faculty-error" role="alert">{error}</p> : students.length === 0 ? <p className="faculty-empty">No assigned students found.</p> : studentTable(visibleStudents)}</section>
+    </div></main>
+    {selectedStudent && <div className="faculty-modal-backdrop" onClick={() => setSelectedStudent(null)}><section className="faculty-modal" role="dialog" aria-modal="true" aria-label={`${selectedStudent.name} performance report`} onClick={e => e.stopPropagation()}><header><div><p className="faculty-eyebrow">STUDENT PERFORMANCE</p><h2>{selectedStudent.name}</h2><p>{selectedStudent.email}</p></div><button type="button" className="faculty-close" onClick={() => setSelectedStudent(null)} aria-label="Close report">×</button></header><div className="faculty-modal-body"><div className="faculty-report-stats"><div><small>Practice sessions</small><strong>{safeNumber(selectedStudent.practice_sessions)}</strong></div><div><small>Average score</small><strong>{selectedStudent.average_score == null ? 'N/A' : `${selectedStudent.average_score}%`}</strong></div><div><small>Completed</small><strong>{safeNumber(selectedStudent.practice_completed)}</strong></div></div><h3>Recent practice activity</h3>{selectedStudent.practice_work?.length ? selectedStudent.practice_work.map((work, index) => <article className="faculty-work" key={work.session_id ?? index}><div className="faculty-work-top"><strong>{work.title || 'Practice session'}</strong><span>{work.completed ? 'Completed' : 'In progress'}</span></div><p>{work.system || 'Clinical assessment'} · {work.difficulty || 'Difficulty not specified'}</p><p>Score: {work.score == null ? 'Not evaluated' : `${work.score}%`}</p>{work.student_report?.interview_summary && <div className="faculty-report-excerpt"><strong>Interview summary</strong><p>{work.student_report.interview_summary}</p></div>}</article>) : <p className="faculty-empty">No practice activity recorded yet.</p>}</div><footer><button type="button" className="faculty-primary-button" onClick={() => setSelectedStudent(null)}>Close report</button></footer></section></div>}
+  </div>;
+}

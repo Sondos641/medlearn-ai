@@ -1,4 +1,5 @@
 import StudentLayout from './StudentLayout';
+import LoadingOverlay from '../components/LoadingOverlay';
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, NavLink } from 'react-router-dom';
@@ -313,6 +314,10 @@ if (!data.translation) {
 
   return (
     <div className="learning-shell">
+      <LoadingOverlay active={isLoading || translatingMessageId !== null}
+        title={translatingMessageId !== null ? 'Translating...' : 'Preparing your answer...'}
+        description={translatingMessageId !== null ? 'Translating the selected message.' : 'Searching your learning materials and generating a response.'}
+      />
       <StudentLayout isDarkMode={isDarkMode} onToggleTheme={toggleDarkMode} onLogout={handleLogout} />
 
       <aside className={`learning-history ${isChatSidebarOpen ? '' : 'learning-history-closed'}`} aria-label="Conversation history">

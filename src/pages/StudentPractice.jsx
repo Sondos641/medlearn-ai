@@ -1,4 +1,5 @@
 import StudentLayout from './StudentLayout';
+import LoadingOverlay from '../components/LoadingOverlay';
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation, NavLink } from 'react-router-dom';
@@ -473,6 +474,11 @@ const handleResumePractice = async (resumeSessionId) => {
 
   return (
     <div className="practice-shell">
+      <LoadingOverlay
+        active={isGenerating || isSubmitting}
+        title={isSubmitting ? 'Evaluating your performance...' : 'Preparing your patient...'}
+        description={isSubmitting ? 'Reviewing your assessment and nursing report. This may take a moment.' : 'Generating or restoring your clinical simulation. This may take a moment.'}
+      />
       <StudentLayout isDarkMode={isDarkMode} onToggleTheme={toggleDarkMode} onLogout={handleLogout} />
 
       <main className="practice-main">
